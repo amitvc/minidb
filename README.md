@@ -1,2 +1,2 @@
 # minidb
-A SQL complaint database written in C
+A SQL complaint database written in C/C++
