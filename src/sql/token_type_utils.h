@@ -1,0 +1,44 @@
+//
+// Created by Amit Chavan on 7/14/25.
+//
+
+#include <string>
+#include <unordered_map>
+#include "token.h"
+#pragma once
+namespace minidb {
+    inline const std::unordered_map<std::string, TokenType>& keyword_map() {
+        static const std::unordered_map<std::string, TokenType> map = {
+                {"SELECT", TokenType::SELECT},
+                {"FROM", TokenType::FROM},
+                {"WHERE", TokenType::WHERE},
+                {"INSERT", TokenType::INSERT},
+                {"INTO", TokenType::INTO},
+                {"VALUES", TokenType::VALUES},
+                {"UPDATE", TokenType::UPDATE},
+                {"SET", TokenType::SET},
+                {"DELETE", TokenType::DELETE},
+                {"CREATE", TokenType::CREATE},
+                {"TABLE", TokenType::TABLE},
+                {"DROP", TokenType::DROP},
+
+                {"INT", TokenType::INT},
+                {"FLOAT", TokenType::FLOAT},
+                {"VARCHAR", TokenType::VARCHAR},
+                {"BOOL", TokenType::BOOL},
+
+                {"AND", TokenType::AND},
+                {"OR", TokenType::OR},
+                {"NOT", TokenType::NOT},
+                {"IS", TokenType::IS},
+                {"NULL", TokenType::NULL_LITERAL},
+                {"TRUE", TokenType::TRUE},
+                {"FALSE", TokenType::FALSE},
+
+                {"AS", TokenType::AS},
+                {"LIMIT", TokenType::LIMIT},
+                {"OFFSET", TokenType::OFFSET}
+        };
+        return map;
+    }
+}

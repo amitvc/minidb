@@ -1,0 +1,49 @@
+//
+// Created by Amit Chavan on 6/9/25.
+//
+#pragma once
+#include <string>
+
+namespace minidb {
+    // Types of tokens we support
+    enum class TokenType {
+        // Basic types
+        IDENTIFIER,
+        INT_LITERAL,
+        STRING_LITERAL,
+        BOOL_LITERAL,
+        NULL_LITERAL,
+
+        // Keywords
+        SELECT, FROM, WHERE, INSERT, INTO, VALUES,
+        UPDATE, SET, DELETE, CREATE, TABLE, DROP,
+        INT, FLOAT, VARCHAR, BOOL,
+
+        // Operators
+        EQ, NE, GT, LT, GTE, LTE,
+        AND, OR, NOT,
+        IS, TRUE, FALSE,
+
+        // Symbols
+        STAR, COMMA, DOT,
+        LPAREN, RPAREN, SINGLE_QUOTE,
+        SEMICOLON,
+
+        // Aliasing
+        AS,
+
+        // Optional extensions
+        LIMIT, OFFSET,
+
+        // End
+        EOF_TOKEN,
+        EOF_FILE,
+        UNKNOWN
+    };
+
+    // Represents a token.
+    struct Token {
+        TokenType type;
+        std::string text;
+    };
+}
