@@ -1,0 +1,85 @@
+//
+// Created by Amit Chavan on 7/28/25.
+//
+
+#pragma once
+#include <variant>
+#include <string>
+#include <vector>
+#include <memory>
+/**
+ * @class ASTNode
+ * @brief The base class for all nodes in the Abstract Syntax Tree.
+ *
+ * This class provides a common interface for all parts of a parsed SQL query.
+ * The virtual destructor is crucial for ensuring that derived-class objects
+ * are properly destroyed when deleted through a base-class pointer.
+ */
+class ASTNode {
+public:
+    virtual ~ASTNode() = default;
+};
+
+/**
+ * @class ExpressionNode
+ * @brief Base class for all expression nodes in the AST.
+ *
+ * An expression is anything that can be evaluated to a value, such as a literal,
+ * a column name, or a binary operation like 'price > 100'.
+ */
+class ExpressionNode : public ASTNode {};
+
+/**
+ * @class LiteralNode
+ * @brief Represents a literal value, like a number, string or a bool using std::variant for type safety.
+ */
+class LiteralNode : public ExpressionNode {
+public:
+    template<typename T>
+    explicit LiteralNode(T val) : value(std::move(val)) {}
+    std::variant<int64_t, std::string, bool> value;
+
+};
+
+/**
+ * @class IdentifierNode
+ * @brief Represents an identifier, such as a table or column name.
+ */
+class IdentifierNode : public ExpressionNode {
+public:
+    std::string name;
+
+    explicit IdentifierNode(std::string name) : name(std::move(name)) {}
+};
+
+/**
+* @class BinaryOperationNode
+* @brief Represents an operation with two operands, like 'a + b' or 'c > d'.
+*/
+class BinaryOperationNode : public ExpressionNode {
+public:
+    std::unique_ptr<ExpressionNode> left;
+    std::string op; // e.g., "=", ">", "AND"
+    std::unique_ptr<ExpressionNode> right;
+
+    BinaryOperationNode(std::unique_ptr<ExpressionNode> left, std::string op, std::unique_ptr<ExpressionNode> right)
+            : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
+};
+
+/**
+ * @class SelectStatementNode
+ * @brief Represents a full SELECT statement. This is a top-level AST node.
+ */
+class SelectStatementNode : public ASTNode {
+public:
+    // Represents a single column in the SELECT list, which can have an optional alias.
+    struct SelectColumn {
+        std::unique_ptr<ExpressionNode> expression;
+        std::string alias; // Empty if no alias
+    };
+
+    bool is_select_all = false;
+    std::vector<SelectColumn> columns;
+    std::unique_ptr<IdentifierNode> from_table;
+    std::unique_ptr<ExpressionNode> where_clause; // Can be nullptr if no WHERE clause
+};

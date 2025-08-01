@@ -6,23 +6,44 @@
 #include "string"
 #include "lexer.h"
 #include "token.h"
-#include "sql_command.h"
+#include "ast.h"
 
 namespace minidb {
 
     class Parser {
         public:
-            Parser(const std::string &input) : lexer_(input) {}
+            explicit Parser(std::vector<Token> tokens) : tokens(std::move(tokens)), pos(0) {
+            }
+
             std::unique_ptr<ASTNode> parse();
 
         private:
-            Lexer lexer_;
+            std::vector<Token> tokens;
 
-            Token get_next_token();
-            bool match(TokenType type);
-            Token expect(TokenType type);
-            std::unique_ptr<SelectNode> parse_select();
-            std::vector<std::string> parse_column_list(Token initial_token = {});
+            inline Token& advance() {
+                if (!is_at_end()) {
+                    return tokens[pos++];
+                }
+                throw std::out_of_range("Cannot advance past the end of tokens.");
+            }
+
+            inline Token& peek() {
+                return tokens[pos];
+            }
+
+            inline bool is_at_end() {
+                return pos >= tokens.size();
+            }
+
+            std::unique_ptr<ASTNode> parse_select_node();
+            std::vector<SelectStatementNode::SelectColumn> parse_columns_collection();
+            std::unique_ptr<ASTNode> parse_insert_node();
+            std::unique_ptr<ASTNode> parse_delete_node();
+            std::unique_ptr<ASTNode> parse_update_node();
+            std::unique_ptr<ASTNode> parse_create_node();
+            std::unique_ptr<ASTNode> parse_drop_node();
+            bool match(const TokenType type);
+            int pos;
     };
 }
 

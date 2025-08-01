@@ -3,6 +3,7 @@
 //
 #pragma once
 #include <string>
+#include "iostream"
 
 namespace minidb {
     // Types of tokens we support
@@ -45,5 +46,8 @@ namespace minidb {
     struct Token {
         TokenType type;
         std::string text;
+        ~Token() {
+            std::cout << "destroying token";
+        }
     };
 }
