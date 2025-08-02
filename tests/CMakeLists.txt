@@ -13,7 +13,9 @@ FetchContent_Declare(
 # Make the gtest and gtest_main targets available
 FetchContent_MakeAvailable(googletest)
 
-add_executable(minidb_test sql/lexer_test.cpp)
+add_executable(minidb_test sql/lexer_test.cpp
+        sql/parser_test.cpp
+        sql/test_utils.h)
 
 target_link_libraries(minidb_test PRIVATE minidb
         gtest_main

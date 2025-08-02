@@ -2,21 +2,15 @@
 // Created by Amit Chavan on 7/23/25.
 //
 #include <gtest/gtest.h>
-
 #include "sql/lexer.h"
 #include "sql/token.h"
+#include "test_utils.h"
 #include <vector>
 
 using namespace minidb;
 // A helper function to compare two vectors of tokens.
 // This makes the test assertions cleaner.
-void assert_tokens_equal(const std::vector<Token>& actual, const std::vector<Token>& expected) {
-    ASSERT_EQ(actual.size(), expected.size());
-    for (size_t i = 0; i < actual.size(); ++i) {
-        EXPECT_EQ(actual[i].type, expected[i].type) << "Token " << i << " type mismatch.";
-        EXPECT_EQ(actual[i].text, expected[i].text) << "Token " << i << " text mismatch.";
-    }
-}
+
 
 class LexerTest : public ::testing::Test {};
 
