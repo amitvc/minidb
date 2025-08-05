@@ -78,8 +78,13 @@ public:
         std::string alias; // Empty if no alias
     };
 
+    struct TableReference {
+        std::unique_ptr<IdentifierNode> name;
+        std::string alias;
+    };
+
     bool is_select_all = false;
     std::vector<SelectColumn> columns;
-    std::unique_ptr<IdentifierNode> from_table;
+    std::vector<TableReference> from_clauses;
     std::unique_ptr<ExpressionNode> where_clause; // Can be nullptr if no WHERE clause
 };

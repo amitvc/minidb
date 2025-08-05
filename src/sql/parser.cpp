@@ -34,22 +34,62 @@ namespace minidb {
 
         // The second token is either * or list of columns.
         if (match(TokenType::STAR)) {
+            advance(); // move to next token
             rootNode->is_select_all;
         } else {
             rootNode->columns = parse_columns_collection();
         }
 
+        advance(); // skip from clause
+
         return rootNode;
     }
 
-    bool Parser::match(const TokenType type) {
-        return peek().type == type;
+    bool Parser::match(TokenType type) {
+        return !(is_at_end() || peek().type != type);
     }
 
     std::vector<SelectStatementNode::SelectColumn> Parser::parse_columns_collection() {
+        // Select col, col2, col2
+        // Select t.col as xx, t.col2,
         std::vector<SelectStatementNode::SelectColumn> columns;
-        
+        do {
+            if (peek().type == TokenType::COMMA) {
+                advance();
+            }
+
+            SelectStatementNode::SelectColumn curr_column;
+            curr_column.expression = extract_column();
+
+            if (match(TokenType::AS)) {
+                advance();
+                curr_column.alias = consume(TokenType::IDENTIFIER, "Expected alias name.").text;
+            }
+            columns.push_back(std::move(curr_column));
+        } while (match(TokenType::COMMA));
         return columns;
+    }
+
+    const Token& Parser::consume(TokenType type, const std::string& message) {
+        if (peek().type == type) return advance();
+        throw std::runtime_error(message + " Got token with text: " + peek().text);
+    }
+
+    std::unique_ptr<ExpressionNode> Parser::extract_column() {
+        if (!match(TokenType::IDENTIFIER)) {
+            throw std::runtime_error("Expected identifier instead found " + peek().text);
+        }
+
+        std::string name = advance().text;
+        if (match(TokenType::DOT)) {
+            advance();
+            std::string member_name = consume(TokenType::IDENTIFIER, "Expected column name after '.'").text;
+            auto table_ident = std::make_unique<IdentifierNode>(name);
+            auto column_ident = std::make_unique<IdentifierNode>(member_name);
+            return std::make_unique<BinaryOperationNode>(std::move(table_ident), ".", std::move(column_ident));
+        } else {
+            return std::make_unique<IdentifierNode>(name);
+        }
     }
 }
 

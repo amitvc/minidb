@@ -16,11 +16,19 @@ using namespace minidb;
 
 class ParserTest : public ::testing::Test {};
 
-TEST_F(ParserTest, ParserTest) {
+TEST_F(ParserTest, SelectAll) {
     std::string query = "SELECT * FROM users;";
     Lexer lexer(query);
     std::vector<Token> tokens = lexer.tokenize();
     Parser parser(tokens);
     parser.parse();
+}
 
+
+TEST_F(ParserTest, SelectJoinTwoTablesWithColumnAlias) {
+    std::string query = "SELECT u.id as user_id, p.name FROM users u, products p WHERE (u.id = p.user_id) AND p.price < 50;";
+    Lexer lexer(query);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    parser.parse();
 }
