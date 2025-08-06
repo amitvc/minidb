@@ -35,11 +35,16 @@ namespace minidb {
                 return pos >= tokens.size();
             }
 
-            const Token& consume(TokenType type, const std::string& message);
+            const Token& ensure(TokenType type, const std::string& message);
             std::unique_ptr<ExpressionNode> extract_column();
 
+            // Operations for constructing Select AST Node
             std::unique_ptr<ASTNode> parse_select_node();
             std::vector<SelectStatementNode::SelectColumn> parse_columns_collection();
+            std::vector<SelectStatementNode::TableReference> parse_from_clauses();
+
+
+
             std::unique_ptr<ASTNode> parse_insert_node();
             std::unique_ptr<ASTNode> parse_delete_node();
             std::unique_ptr<ASTNode> parse_update_node();

@@ -18,7 +18,8 @@ namespace minidb {
         // Keywords
         SELECT, FROM, WHERE, INSERT, INTO, VALUES,
         UPDATE, SET, DELETE, CREATE, TABLE, DROP,
-        INT, FLOAT, VARCHAR, BOOL,
+        INT, FLOAT, VARCHAR, BOOL, JOIN,
+        ON,
 
         // Operators
         EQ, NE, GT, LT, GTE, LTE,

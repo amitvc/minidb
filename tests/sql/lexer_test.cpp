@@ -77,7 +77,10 @@ TEST_F(LexerTest, SelectWithColumnAndWhereClauseName) {
 }
 
 TEST_F(LexerTest, SelectJoinTwoTablesWithColumnAlias) {
-    std::string query = "SELECT u.id as user_id, p.name FROM users u, products p WHERE (u.id = p.user_id) AND p.price < 50;";
+    std::string query = "SELECT u.id as user_id, p.name \n"
+                        "FROM users u\n"
+                        "JOIN products p ON u.id = p.user_id\n"
+                        "WHERE p.price < 50;";
     Lexer lexer(query);
     std::vector<Token> tokens = lexer.tokenize();
     std::vector<Token> expected_tokens = {
@@ -94,23 +97,20 @@ TEST_F(LexerTest, SelectJoinTwoTablesWithColumnAlias) {
             {TokenType::FROM, "FROM"},
             {TokenType::IDENTIFIER, "users"},
             {TokenType::IDENTIFIER, "u"},
-            {TokenType::COMMA, ","},
+            {TokenType::JOIN, "JOIN"},
             {TokenType::IDENTIFIER, "products"},
             {TokenType::IDENTIFIER, "p"},
-            {TokenType::WHERE, "WHERE"},
-            {TokenType::LPAREN, "("},
+            {TokenType::ON, "ON"},
             {TokenType::IDENTIFIER, "u"},
             {TokenType::DOT, "."},
             {TokenType::IDENTIFIER, "id"},
             {TokenType::EQ, "="},
-
             {TokenType::IDENTIFIER, "p"},
             {TokenType::DOT, "."},
             {TokenType::IDENTIFIER, "user_id"},
 
-            {TokenType::RPAREN, ")"},
+            {TokenType::WHERE, "WHERE"},
 
-            {TokenType::AND, "AND"},
 
             {TokenType::IDENTIFIER, "p"},
             {TokenType::DOT, "."},

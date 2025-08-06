@@ -26,7 +26,10 @@ TEST_F(ParserTest, SelectAll) {
 
 
 TEST_F(ParserTest, SelectJoinTwoTablesWithColumnAlias) {
-    std::string query = "SELECT u.id as user_id, p.name FROM users u, products p WHERE (u.id = p.user_id) AND p.price < 50;";
+    std::string query = "SELECT u.id as user_id, p.name \n"
+                        "FROM users u\n"
+                        "JOIN products p ON u.id = p.user_id\n"
+                        "WHERE p.price < 50;";
     Lexer lexer(query);
     std::vector<Token> tokens = lexer.tokenize();
     Parser parser(tokens);

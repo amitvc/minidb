@@ -40,7 +40,11 @@ namespace minidb {
             rootNode->columns = parse_columns_collection();
         }
 
-        advance(); // skip from clause
+        ensure(TokenType::FROM, "Expected identifier From.");
+
+        // Now parse user u, person p
+        rootNode->from_clauses = parse_from_clauses();
+
 
         return rootNode;
     }
@@ -48,6 +52,8 @@ namespace minidb {
     bool Parser::match(TokenType type) {
         return !(is_at_end() || peek().type != type);
     }
+
+
 
     std::vector<SelectStatementNode::SelectColumn> Parser::parse_columns_collection() {
         // Select col, col2, col2
@@ -63,14 +69,14 @@ namespace minidb {
 
             if (match(TokenType::AS)) {
                 advance();
-                curr_column.alias = consume(TokenType::IDENTIFIER, "Expected alias name.").text;
+                curr_column.alias = ensure(TokenType::IDENTIFIER, "Expected alias name.").text;
             }
             columns.push_back(std::move(curr_column));
         } while (match(TokenType::COMMA));
         return columns;
     }
 
-    const Token& Parser::consume(TokenType type, const std::string& message) {
+    const Token& Parser::ensure(TokenType type, const std::string& message) {
         if (peek().type == type) return advance();
         throw std::runtime_error(message + " Got token with text: " + peek().text);
     }
@@ -83,13 +89,27 @@ namespace minidb {
         std::string name = advance().text;
         if (match(TokenType::DOT)) {
             advance();
-            std::string member_name = consume(TokenType::IDENTIFIER, "Expected column name after '.'").text;
+            std::string member_name = ensure(TokenType::IDENTIFIER, "Expected column name after '.'").text;
             auto table_ident = std::make_unique<IdentifierNode>(name);
             auto column_ident = std::make_unique<IdentifierNode>(member_name);
             return std::make_unique<BinaryOperationNode>(std::move(table_ident), ".", std::move(column_ident));
         } else {
             return std::make_unique<IdentifierNode>(name);
         }
+    }
+
+    std::vector<SelectStatementNode::TableReference> Parser::parse_from_clauses() {
+        std::vector<SelectStatementNode::TableReference> table_ref;
+        do {
+            // Parsing tableName alias format
+            if (tokens[pos+1].type == TokenType::COMMA) {
+
+            } else {
+
+            }
+
+        } while (peek().type != TokenType::WHERE);
+        return table_ref;
     }
 }
 

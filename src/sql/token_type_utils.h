@@ -26,6 +26,8 @@ namespace minidb {
                 {"FLOAT", TokenType::FLOAT},
                 {"VARCHAR", TokenType::VARCHAR},
                 {"BOOL", TokenType::BOOL},
+                {"JOIN", TokenType::JOIN},
+                {"ON", TokenType::ON},
 
                 {"AND", TokenType::AND},
                 {"OR", TokenType::OR},
