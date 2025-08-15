@@ -48,7 +48,6 @@ namespace minidb {
         TokenType type;
         std::string text;
         ~Token() {
-            std::cout << "destroying token";
         }
     };
 }

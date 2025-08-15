@@ -20,12 +20,7 @@ namespace minidb {
         private:
             std::vector<Token> tokens;
 
-            inline Token& advance() {
-                if (!is_at_end()) {
-                    return tokens[pos++];
-                }
-                throw std::out_of_range("Cannot advance past the end of tokens.");
-            }
+            Token& advance();
 
             inline Token& peek() {
                 return tokens[pos];
@@ -41,9 +36,13 @@ namespace minidb {
             // Operations for constructing Select AST Node
             std::unique_ptr<ASTNode> parse_select_node();
             std::vector<SelectStatementNode::SelectColumn> parse_columns_collection();
-            std::vector<SelectStatementNode::TableReference> parse_from_clauses();
-
-
+            std::unique_ptr<SelectStatementNode::TableReference> parse_from_table_ref();
+            std::unique_ptr<ExpressionNode> parse_expression();
+            
+            // Expression parsing helpers with operator precedence
+            std::unique_ptr<ExpressionNode> parse_or_expression();
+            std::unique_ptr<ExpressionNode> parse_and_expression();
+            std::unique_ptr<ExpressionNode> parse_comparison_expression();
 
             std::unique_ptr<ASTNode> parse_insert_node();
             std::unique_ptr<ASTNode> parse_delete_node();

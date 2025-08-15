@@ -17,6 +17,24 @@
  */
 class ASTNode {
 public:
+    enum class NodeType {
+        // Statements
+        SELECT_STATEMENT,
+        INSERT_STATEMENT,
+        UPDATE_STATEMENT,
+        DELETE_STATEMENT,
+        CREATE_TABLE_STATEMENT,
+
+        // Expressions
+        LITERAL,
+        IDENTIFIER,
+        QUALIFIED_IDENTIFIER,
+        BINARY_OPERATION,
+        UNARY_OPERATION,
+        FUNCTION_CALL,
+        STAR_EXPRESSION  // For SELECT *
+    };
+
     virtual ~ASTNode() = default;
 };
 
@@ -67,6 +85,19 @@ public:
 };
 
 /**
+ * @class QualifiedIdentifierNode
+ * @brief Represents a qualified name, such as 'table.column' or 'alias.column'.
+ */
+class QualifiedIdentifierNode : public ExpressionNode {
+public:
+    std::unique_ptr<IdentifierNode> qualifier; // The left part (e.g., 'table' or 'alias')
+    std::unique_ptr<IdentifierNode> name;      // The right part (e.g., 'column')
+
+    QualifiedIdentifierNode(std::unique_ptr<IdentifierNode> qualifier, std::unique_ptr<IdentifierNode> name)
+            : qualifier(std::move(qualifier)), name(std::move(name)) {}
+};
+
+/**
  * @class SelectStatementNode
  * @brief Represents a full SELECT statement. This is a top-level AST node.
  */
@@ -78,13 +109,38 @@ public:
         std::string alias; // Empty if no alias
     };
 
+    // Represents a single table reference, e.g., "users" or "users u"
     struct TableReference {
         std::unique_ptr<IdentifierNode> name;
         std::string alias;
     };
 
+    // Represents a JOIN clause, e.g., "JOIN products p ON u.id = p.user_id"
+    struct JoinClause {
+        std::unique_ptr<TableReference> table;
+        std::unique_ptr<ExpressionNode> on_condition;
+    };
+
+    struct OrderByClause {
+        std::unique_ptr<ExpressionNode> expression;
+        bool is_ascending = true;
+    };
+
+    struct GroupByClause {
+        std::vector<std::unique_ptr<ExpressionNode>> expressions;
+        std::unique_ptr<ExpressionNode> having_clause;  // Optional HAVING
+    };
+
+
     bool is_select_all = false;
     std::vector<SelectColumn> columns;
-    std::vector<TableReference> from_clauses;
+    std::unique_ptr<TableReference> from_clause;
+    std::vector<JoinClause> join_clause;
     std::unique_ptr<ExpressionNode> where_clause; // Can be nullptr if no WHERE clause
+    // GROUP BY and HAVING
+    std::optional<GroupByClause> group_by;
+
+    // ORDER BY
+    std::vector<OrderByClause> order_by;
+
 };
