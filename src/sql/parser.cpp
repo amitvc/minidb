@@ -1,12 +1,29 @@
-//
-// Created by Amit Chavan on 7/15/25.
-//
+/**
+ * @file parser.cpp
+ * @brief Implementation of the SQL parser that builds Abstract Syntax Trees
+ * 
+ * This file implements the Parser class which converts token streams into
+ * Abstract Syntax Trees using recursive descent parsing. The parser handles
+ * SELECT statements with proper operator precedence for expressions.
+ * 
+ * Created by Amit Chavan on 7/15/25.
+ */
 
 #include "parser.h"
 
 
 namespace minidb {
 
+    /**
+     * @brief Main entry point for parsing the token stream
+     * 
+     * Examines the first token to determine the statement type and delegates
+     * to the appropriate parsing method. Currently only SELECT statements are
+     * fully implemented.
+     * 
+     * @return Root ASTNode representing the parsed SQL statement
+     * @throws std::runtime_error for unsupported statement types
+     */
     std::unique_ptr<ASTNode> minidb::Parser::parse() {
 
         std::unique_ptr<ASTNode> rootNode;
@@ -36,6 +53,14 @@ namespace minidb {
 
     }
 
+    /**
+     * @brief Parses a complete SELECT statement with all clauses
+     * 
+     * Handles the full SELECT statement syntax:
+     * SELECT { * | column_list } FROM table_ref [JOIN table_ref ON condition] [WHERE condition]
+     * 
+     * @return SelectStatementNode containing all parsed components
+     */
     std::unique_ptr<ASTNode> Parser::parse_select_node() {
         auto rootNode = std::make_unique<SelectStatementNode>();
         advance(); // Advance past the first token
@@ -72,14 +97,28 @@ namespace minidb {
     }
 
     /**
-     * Checks whether the token passed in to the function matches the token at the current position
-     * @param type
-     * @return true if match is found or else returns false.
+     * @brief Checks whether the current token matches the specified type
+     * 
+     * This is a non-consuming peek operation that checks if the current token
+     * matches the given type without advancing the parser position.
+     * 
+     * @param type TokenType to check against current token
+     * @return true if current token matches type and we're not at end, false otherwise
      */
     bool Parser::match(TokenType type) {
         return !(is_at_end() || peek().type != type);
     }
 
+    /**
+     * @brief Parses a comma-separated list of column expressions with optional aliases
+     * 
+     * Handles various column formats:
+     * - Simple identifiers: column_name
+     * - Qualified identifiers: table.column_name
+     * - Aliases: column_name AS alias_name or column_name alias_name
+     * 
+     * @return Vector of SelectColumn structures containing expressions and aliases
+     */
     std::vector<SelectStatementNode::SelectColumn> Parser::parse_columns_collection() {
         // Select col, col2, col2
         // Select t.col as xx, t.col2,
@@ -102,17 +141,31 @@ namespace minidb {
     }
 
     /**
-     * @brief ensure the current token if it matches the expected type, otherwise throws an error.
-     * It will also move the token index 1 position ahead.
-     * @param type The expected TokenType.
-     * @param message The error message to throw if the token does not match.
-     * @return A const reference to the consumed token.
+     * @brief Validates and consumes a token of the expected type
+     * 
+     * This method enforces that the current token matches the expected type.
+     * If it matches, the token is consumed and returned. If not, a descriptive
+     * error is thrown.
+     * 
+     * @param type The expected TokenType
+     * @param message Custom error message to include in exception
+     * @return Reference to the consumed token
+     * @throws std::runtime_error if token type doesn't match expectation
      */
     const Token &Parser::ensure(TokenType type, const std::string &message) {
         if (peek().type == type) return advance();
         throw std::runtime_error(message + " Got token with text: " + peek().text);
     }
 
+    /**
+     * @brief Parses column references including qualified identifiers
+     * 
+     * Handles both simple identifiers (column_name) and qualified identifiers
+     * (table.column_name). Creates appropriate AST nodes for each case.
+     * 
+     * @return IdentifierNode for simple names or QualifiedIdentifierNode for table.column
+     * @throws std::runtime_error if current token is not an identifier
+     */
     std::unique_ptr<ExpressionNode> Parser::extract_column() {
         if (!match(TokenType::IDENTIFIER)) {
             throw std::runtime_error("Expected identifier instead found " + peek().text);
@@ -130,7 +183,16 @@ namespace minidb {
         }
     }
 
-    // Helper function to parse a single table reference with an optional alias
+    /**
+     * @brief Parses a table reference with optional alias in FROM or JOIN clauses
+     * 
+     * Handles various table reference formats:
+     * - Simple table name: table_name
+     * - Explicit alias: table_name AS alias_name
+     * - Implicit alias: table_name alias_name
+     * 
+     * @return TableReference structure with table name and optional alias
+     */
     std::unique_ptr<SelectStatementNode::TableReference> Parser::parse_from_table_ref() {
         auto table_ref = std::make_unique<SelectStatementNode::TableReference>();
         table_ref->name = std::make_unique<IdentifierNode>(ensure(TokenType::IDENTIFIER, "Expected table name.").text);
@@ -146,97 +208,94 @@ namespace minidb {
     }
 
     /**
-     * Parses a logical expression with AND/OR operators
-     * Uses recursive descent parsing with proper operator precedence
-     *
-     * @return A unique ptr for an ExpressionNode that represents the expression
+     * @brief Entry point for expression parsing with full operator precedence
+     * 
+     * This method serves as the top-level entry point for parsing expressions.
+     * It delegates to parse_or_expression() which implements the lowest precedence
+     * level in the operator precedence hierarchy.
+     * 
+     * Operator precedence (highest to lowest):
+     * 1. Comparison operators (=, !=, <, >, <=, >=)
+     * 2. AND
+     * 3. OR
+     * 
+     * @return ExpressionNode representing the complete parsed expression
      */
     std::unique_ptr<ExpressionNode> Parser::parse_expression() {
-        return parse_or_expression();
+        auto left = parse_term();
+
+        while (match(TokenType::AND) || match(TokenType::OR)) {
+            advance();
+            std::string op = tokens[pos - 1].text;
+            auto right = parse_term();
+            left = std::make_unique<BinaryOperationNode>(std::move(left), op, std::move(right));
+        }
+        return left;
     }
 
-    // Parse OR expressions (lowest precedence)
-    std::unique_ptr<ExpressionNode> Parser::parse_or_expression() {
-        auto left = parse_and_expression();
-        
-        while (match(TokenType::OR)) {
-            advance(); // Consume OR token
-            auto right = parse_and_expression();
-            left = std::make_unique<BinaryOperationNode>(std::move(left), "OR", std::move(right));
+    std::unique_ptr<ExpressionNode> Parser::parse_term() {
+        auto left = parse_primary();
+
+        while (peek().type == TokenType::EQ || peek().type == TokenType::NE ||
+               peek().type == TokenType::LT || peek().type == TokenType::LTE ||
+               peek().type == TokenType::GT || peek().type == TokenType::GTE) {
+            std::string op = advance().text;
+            auto right = parse_primary();
+            left = std::make_unique<BinaryOperationNode>(std::move(left), op, std::move(right));
         }
-        
         return left;
     }
-    
-    // Parse AND expressions (higher precedence than OR)
-    std::unique_ptr<ExpressionNode> Parser::parse_and_expression() {
-        auto left = parse_comparison_expression();
-        
-        while (match(TokenType::AND)) {
-            advance(); // Consume AND token
-            auto right = parse_comparison_expression();
-            left = std::make_unique<BinaryOperationNode>(std::move(left), "AND", std::move(right));
+
+    std::unique_ptr<ExpressionNode> Parser::parse_primary() {
+        if (match(TokenType::INT_LITERAL)) {
+            advance();
+            int64_t val = std::stoll(tokens[pos - 1].text);
+            return std::make_unique<LiteralNode>(val);
         }
-        
-        return left;
-    }
-    
-    // Parse comparison expressions (=, !=, <, >, <=, >=)
-    std::unique_ptr<ExpressionNode> Parser::parse_comparison_expression() {
-        // Parse left operand (identifier or qualified identifier)
-        auto left = extract_column();
-        
-        // Parse operator - map token type to operator string
-        std::string op;
-        if (match(TokenType::EQ)) {
-            op = "=";
-        } else if (match(TokenType::NE)) {
-            op = "!=";
-        } else if (match(TokenType::GT)) {
-            op = ">";
-        } else if (match(TokenType::LT)) {
-            op = "<";
-        } else if (match(TokenType::GTE)) {
-            op = ">=";
-        } else if (match(TokenType::LTE)) {
-            op = "<=";
-        } else {
-            throw std::runtime_error("Expected comparison operator in expression");
+        if (match(TokenType::STRING_LITERAL)) {
+            advance();
+            return std::make_unique<LiteralNode>(tokens[pos - 1].text);
         }
-        
-        advance(); // Consume the operator token
-        
-        // Parse right operand - could be identifier, qualified identifier, or literal
-        std::unique_ptr<ExpressionNode> right;
+
         if (match(TokenType::IDENTIFIER)) {
-            right = extract_column();
-        } else if (match(TokenType::INT_LITERAL)) {
-            int64_t value = std::stoll(advance().text);
-            right = std::make_unique<LiteralNode>(value);
-        } else if (match(TokenType::STRING_LITERAL)) {
-            std::string value = advance().text;
-            right = std::make_unique<LiteralNode>(value);
-        } else if (match(TokenType::TRUE) || match(TokenType::FALSE)) {
-            bool value = advance().text == "TRUE";
-            right = std::make_unique<LiteralNode>(value);
-        } else {
-            throw std::runtime_error("Expected identifier or literal in expression");
+            advance();
+            std::string name = tokens[pos - 1].text;
+            if (match(TokenType::DOT)) {
+                advance();
+                auto qualifier = std::make_unique<IdentifierNode>(name);
+                auto member_name = ensure(TokenType::IDENTIFIER, "Expected column name after '.'").text;
+                auto member = std::make_unique<IdentifierNode>(member_name);
+                return std::make_unique<QualifiedIdentifierNode>(std::move(qualifier), std::move(member));
+            }
+            return std::make_unique<IdentifierNode>(name);
         }
-        
-        return std::make_unique<BinaryOperationNode>(std::move(left), std::move(op), std::move(right));
+
+        if (match(TokenType::LPAREN)) {
+            advance();
+            auto expr = parse_expression();
+            ensure(TokenType::RPAREN, "Expected ')' after expression.");
+            return expr;
+        }
+
+        throw std::runtime_error("Unexpected token in expression: " + peek().text);
     }
+
 
     /**
-    * @brief Consumes the current token and returns it, advancing the stream.
-    * @return A const reference to the consumed token.
-    */
+     * @brief Consumes the current token and advances the parser position
+     * 
+     * This method moves the parser to the next token in the stream and returns
+     * a reference to the token that was consumed. It includes bounds checking
+     * to prevent advancing past the end of the token stream.
+     * 
+     * @return Reference to the consumed token
+     * @throws std::out_of_range if attempting to advance past end of tokens
+     */
     Token &Parser::advance() {
         if (!is_at_end()) {
             return tokens[pos++];
         }
         throw std::out_of_range("Cannot advance past the end of tokens.");
     }
-
-
 }
 

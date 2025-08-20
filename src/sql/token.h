@@ -19,7 +19,7 @@ namespace minidb {
         SELECT, FROM, WHERE, INSERT, INTO, VALUES,
         UPDATE, SET, DELETE, CREATE, TABLE, DROP,
         INT, FLOAT, VARCHAR, BOOL, JOIN,
-        ON,
+        ON, GROUP, BY, ORDER, ASC, DESC,
 
         // Operators
         EQ, NE, GT, LT, GTE, LTE,
@@ -43,11 +43,9 @@ namespace minidb {
         UNKNOWN
     };
 
-    // Represents a token.
     struct Token {
         TokenType type;
         std::string text;
-        ~Token() {
-        }
+        ~Token() = default;
     };
 }

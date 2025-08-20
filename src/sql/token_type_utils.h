@@ -28,6 +28,11 @@ namespace minidb {
                 {"BOOL", TokenType::BOOL},
                 {"JOIN", TokenType::JOIN},
                 {"ON", TokenType::ON},
+                {"GROUP", TokenType::GROUP},
+                {"BY", TokenType::BY},
+                {"ORDER", TokenType::ORDER},
+                {"ASC", TokenType::ASC},
+                {"DESC", TokenType::DESC},
 
                 {"AND", TokenType::AND},
                 {"OR", TokenType::OR},
