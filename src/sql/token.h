@@ -19,7 +19,7 @@ namespace minidb {
         SELECT, FROM, WHERE, INSERT, INTO, VALUES,
         UPDATE, SET, DELETE, CREATE, TABLE, DROP,
         INT, FLOAT, VARCHAR, BOOL, JOIN,
-        ON, GROUP, BY, ORDER, ASC, DESC,
+        ON, GROUP, BY, HAVING, ORDER, ASC, DESC,
 
         // Operators
         EQ, NE, GT, LT, GTE, LTE,

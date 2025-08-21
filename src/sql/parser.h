@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "string"
+#include <string>
 #include "lexer.h"
 #include "token.h"
 #include "ast.h"
@@ -118,14 +118,18 @@ namespace minidb {
              * @return TableReference structure with table name and optional alias
              */
             std::unique_ptr<SelectStatementNode::TableReference> parse_from_table_ref();
-            
+
+
+            std::unique_ptr<SelectStatementNode::GroupByClause> parse_group_by_clause();
+
             /**
              * @brief Entry point for expression parsing with full operator precedence
              * @return ExpressionNode representing the parsed expression
              */
-            std::unique_ptr<ExpressionNode> parse_expression();
-            std::unique_ptr<ExpressionNode> parse_primary();
-            std::unique_ptr<ExpressionNode> parse_term();
+            std::unique_ptr<ExpressionNode> parse_logical_expression();
+            std::unique_ptr<ExpressionNode> parse_value_or_identifier();
+            std::unique_ptr<ExpressionNode> parse_relational_expression();
+            std::vector<std::unique_ptr<ExpressionNode>> parse_expression_list();
 
             // Future statement parsers (not yet implemented)
             std::unique_ptr<ASTNode> parse_insert_node();   ///< TODO: Parse INSERT statements
@@ -139,7 +143,7 @@ namespace minidb {
              * @param type TokenType to match against
              * @return true if current token matches type and we're not at end, false otherwise
              */
-            bool match(const TokenType type);
+            bool match(TokenType type);
     };
 }
 

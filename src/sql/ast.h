@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 #include <memory>
+
+namespace minidb {
+
 /**
  * @class ASTNode
  * @brief The base class for all nodes in the Abstract Syntax Tree.
@@ -137,10 +140,12 @@ public:
     std::unique_ptr<TableReference> from_clause;
     std::vector<JoinClause> join_clause;
     std::unique_ptr<ExpressionNode> where_clause; // Can be nullptr if no WHERE clause
-    // GROUP BY and HAVING
-    std::optional<GroupByClause> group_by;
+    // GROUP BY
+    std::unique_ptr<GroupByClause> group_by;
 
     // ORDER BY
     std::vector<OrderByClause> order_by;
 
 };
+
+} // namespace minidb

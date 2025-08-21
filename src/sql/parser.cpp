@@ -1,6 +1,6 @@
 /**
  * @file parser.cpp
- * @brief Implementation of the SQL parser that builds Abstract Syntax Trees
+ * @brief Implementation of the SQL parser that builds Abstract Syntax Tree for each type SQL query command.
  * 
  * This file implements the Parser class which converts token streams into
  * Abstract Syntax Trees using recursive descent parsing. The parser handles
@@ -83,17 +83,45 @@ namespace minidb {
             advance();
             join_clause.table = parse_from_table_ref();
             ensure(TokenType::ON, "Expected 'ON' keyword for JOIN clause.");
-            join_clause.on_condition = parse_expression();
+            join_clause.on_condition = parse_logical_expression();
             rootNode->join_clause.push_back(std::move(join_clause));
         }
 
         // Parse optional WHERE clause
         if (match(TokenType::WHERE)) {
             advance(); // Consume WHERE token
-            rootNode->where_clause = parse_expression();
+            rootNode->where_clause = parse_logical_expression();
         }
 
+        if (match(TokenType::GROUP)) {
+            advance();
+            ensure(TokenType::BY, "Expected 'By' keyword after GROUP. Instead found "+ tokens[pos].text);
+            rootNode->group_by = parse_group_by_clause();
+        }
+
+
         return rootNode;
+    }
+
+    std::unique_ptr<SelectStatementNode::GroupByClause> Parser::parse_group_by_clause() {
+        auto clause = std::make_unique<SelectStatementNode::GroupByClause>();
+        clause->expressions = parse_expression_list();
+        if (match(TokenType::HAVING)) {
+            advance();
+            clause->having_clause = parse_logical_expression();
+        }
+        return clause;
+    }
+
+    std::vector<std::unique_ptr<ExpressionNode>> Parser::parse_expression_list() {
+        std::vector<std::unique_ptr<ExpressionNode>> expressions;
+        expressions.push_back(parse_logical_expression());
+        
+        while (match(TokenType::COMMA)) {
+            advance(); // consume comma
+            expressions.push_back(parse_logical_expression());
+        }
+        return expressions;
     }
 
     /**
@@ -221,32 +249,32 @@ namespace minidb {
      * 
      * @return ExpressionNode representing the complete parsed expression
      */
-    std::unique_ptr<ExpressionNode> Parser::parse_expression() {
-        auto left = parse_term();
+    std::unique_ptr<ExpressionNode> Parser::parse_logical_expression() {
+        auto left = parse_relational_expression();
 
         while (match(TokenType::AND) || match(TokenType::OR)) {
             advance();
             std::string op = tokens[pos - 1].text;
-            auto right = parse_term();
+            auto right = parse_relational_expression();
             left = std::make_unique<BinaryOperationNode>(std::move(left), op, std::move(right));
         }
         return left;
     }
 
-    std::unique_ptr<ExpressionNode> Parser::parse_term() {
-        auto left = parse_primary();
+    std::unique_ptr<ExpressionNode> Parser::parse_relational_expression() {
+        auto left = parse_value_or_identifier();
 
         while (peek().type == TokenType::EQ || peek().type == TokenType::NE ||
                peek().type == TokenType::LT || peek().type == TokenType::LTE ||
                peek().type == TokenType::GT || peek().type == TokenType::GTE) {
             std::string op = advance().text;
-            auto right = parse_primary();
+            auto right = parse_value_or_identifier();
             left = std::make_unique<BinaryOperationNode>(std::move(left), op, std::move(right));
         }
         return left;
     }
 
-    std::unique_ptr<ExpressionNode> Parser::parse_primary() {
+    std::unique_ptr<ExpressionNode> Parser::parse_value_or_identifier() {
         if (match(TokenType::INT_LITERAL)) {
             advance();
             int64_t val = std::stoll(tokens[pos - 1].text);
@@ -272,7 +300,7 @@ namespace minidb {
 
         if (match(TokenType::LPAREN)) {
             advance();
-            auto expr = parse_expression();
+            auto expr = parse_logical_expression();
             ensure(TokenType::RPAREN, "Expected ')' after expression.");
             return expr;
         }

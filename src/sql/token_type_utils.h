@@ -30,6 +30,7 @@ namespace minidb {
                 {"ON", TokenType::ON},
                 {"GROUP", TokenType::GROUP},
                 {"BY", TokenType::BY},
+                {"HAVING", TokenType::HAVING},
                 {"ORDER", TokenType::ORDER},
                 {"ASC", TokenType::ASC},
                 {"DESC", TokenType::DESC},

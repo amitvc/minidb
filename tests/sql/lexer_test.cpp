@@ -8,9 +8,6 @@
 #include <vector>
 
 using namespace minidb;
-// A helper function to compare two vectors of tokens.
-// This makes the test assertions cleaner.
-
 
 class LexerTest : public ::testing::Test {};
 
