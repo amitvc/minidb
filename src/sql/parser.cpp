@@ -24,7 +24,7 @@ namespace minidb {
      * @return Root ASTNode representing the parsed SQL statement
      * @throws std::runtime_error for unsupported statement types
      */
-    std::unique_ptr<ASTNode> minidb::Parser::parse() {
+    std::unique_ptr<ASTNode> Parser::parse() {
 
         std::unique_ptr<ASTNode> rootNode;
 
@@ -41,7 +41,7 @@ namespace minidb {
                 //TODO implement parse_update_node();
                 break;
             case TokenType::DROP:
-                //TODO implement parse_drop_node();
+                return parse_drop_node();
                 break;
             case TokenType::CREATE:
                 //TODO implement parse_create_node();
@@ -98,8 +98,28 @@ namespace minidb {
             ensure(TokenType::BY, "Expected 'By' keyword after GROUP. Instead found "+ tokens[pos].text);
             rootNode->group_by = parse_group_by_clause();
         }
+        return rootNode;
+    }
 
-
+    /**
+     * @brief Parses a complete DROP statement.
+     * Handles the full DROP statement syntax:
+     * DROP IF EXISTS table list
+     * @return DropTableStatementNode containing all parsed components
+     */
+    std::unique_ptr<ASTNode> Parser::parse_drop_node() {
+        auto rootNode = std::make_unique<DropTableStatementNode>();
+        advance(); // Advance past the first token
+        if (match(TokenType::IF)) {
+            advance();
+            ensure(TokenType::EXISTS, "Expected 'Exists' keyword after IF.");
+            rootNode->if_exists = true;
+            do {
+                rootNode->table_names.push_back(
+                    std::make_unique<IdentifierNode>(ensure(TokenType::IDENTIFIER, "Expected table name.").text)
+                );
+            } while (match(TokenType::COMMA));
+        }
         return rootNode;
     }
 

@@ -21,6 +21,8 @@ namespace minidb {
                 {"CREATE", TokenType::CREATE},
                 {"TABLE", TokenType::TABLE},
                 {"DROP", TokenType::DROP},
+                {"IF", TokenType::IF},
+                {"EXISTS", TokenType::EXISTS},
 
                 {"INT", TokenType::INT},
                 {"FLOAT", TokenType::FLOAT},

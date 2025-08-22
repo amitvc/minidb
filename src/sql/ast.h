@@ -100,52 +100,58 @@ public:
             : qualifier(std::move(qualifier)), name(std::move(name)) {}
 };
 
-/**
- * @class SelectStatementNode
- * @brief Represents a full SELECT statement. This is a top-level AST node.
- */
-class SelectStatementNode : public ASTNode {
-public:
-    // Represents a single column in the SELECT list, which can have an optional alias.
-    struct SelectColumn {
-        std::unique_ptr<ExpressionNode> expression;
-        std::string alias; // Empty if no alias
+    /**
+     * @class SelectStatementNode
+     * @brief Represents a full SELECT statement. This is a top-level AST node.
+     */
+    class SelectStatementNode final : public ASTNode {
+    public:
+        // Represents a single column in the SELECT list, which can have an optional alias.
+        struct SelectColumn {
+            std::unique_ptr<ExpressionNode> expression;
+            std::string alias; // Empty if no alias
+        };
+
+        // Represents a single table reference, e.g., "users" or "users u"
+        struct TableReference {
+            std::unique_ptr<IdentifierNode> name;
+            std::string alias;
+        };
+
+        // Represents a JOIN clause, e.g., "JOIN products p ON u.id = p.user_id"
+        struct JoinClause {
+            std::unique_ptr<TableReference> table;
+            std::unique_ptr<ExpressionNode> on_condition;
+        };
+
+        struct OrderByClause {
+            std::unique_ptr<ExpressionNode> expression;
+            bool is_ascending = true;
+        };
+
+        struct GroupByClause {
+            std::vector<std::unique_ptr<ExpressionNode>> expressions;
+            std::unique_ptr<ExpressionNode> having_clause;  // Optional HAVING
+        };
+
+
+        bool is_select_all = false;
+        std::vector<SelectColumn> columns;
+        std::unique_ptr<TableReference> from_clause;
+        std::vector<JoinClause> join_clause;
+        std::unique_ptr<ExpressionNode> where_clause; // Can be nullptr if no WHERE clause
+        // GROUP BY
+        std::unique_ptr<GroupByClause> group_by;
+
+        // ORDER BY
+        std::vector<OrderByClause> order_by;
     };
 
-    // Represents a single table reference, e.g., "users" or "users u"
-    struct TableReference {
-        std::unique_ptr<IdentifierNode> name;
-        std::string alias;
+    class DropTableStatementNode final : public ASTNode {
+    public:
+        bool if_exists = false;
+        // This holds the table names
+        std::vector<std::unique_ptr<IdentifierNode>> table_names;
     };
-
-    // Represents a JOIN clause, e.g., "JOIN products p ON u.id = p.user_id"
-    struct JoinClause {
-        std::unique_ptr<TableReference> table;
-        std::unique_ptr<ExpressionNode> on_condition;
-    };
-
-    struct OrderByClause {
-        std::unique_ptr<ExpressionNode> expression;
-        bool is_ascending = true;
-    };
-
-    struct GroupByClause {
-        std::vector<std::unique_ptr<ExpressionNode>> expressions;
-        std::unique_ptr<ExpressionNode> having_clause;  // Optional HAVING
-    };
-
-
-    bool is_select_all = false;
-    std::vector<SelectColumn> columns;
-    std::unique_ptr<TableReference> from_clause;
-    std::vector<JoinClause> join_clause;
-    std::unique_ptr<ExpressionNode> where_clause; // Can be nullptr if no WHERE clause
-    // GROUP BY
-    std::unique_ptr<GroupByClause> group_by;
-
-    // ORDER BY
-    std::vector<OrderByClause> order_by;
-
-};
 
 } // namespace minidb

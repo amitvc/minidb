@@ -20,6 +20,7 @@ namespace minidb {
         UPDATE, SET, DELETE, CREATE, TABLE, DROP,
         INT, FLOAT, VARCHAR, BOOL, JOIN,
         ON, GROUP, BY, HAVING, ORDER, ASC, DESC,
+        IF, EXISTS,
 
         // Operators
         EQ, NE, GT, LT, GTE, LTE,
