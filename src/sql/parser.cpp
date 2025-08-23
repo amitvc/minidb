@@ -109,19 +109,33 @@ namespace minidb {
      */
     std::unique_ptr<ASTNode> Parser::parse_drop_node() {
         auto rootNode = std::make_unique<DropTableStatementNode>();
-        advance(); // Advance past the first token
+        advance(); // Advance past the drop token
+        // Confirm drop is followed by TABLE
+        ensure(TokenType::TABLE, "Expected 'TABLE' keyword after DROP. Instead found " + peek().text);
         if (match(TokenType::IF)) {
             advance();
             ensure(TokenType::EXISTS, "Expected 'Exists' keyword after IF.");
             rootNode->if_exists = true;
-            do {
-                rootNode->table_names.push_back(
-                    std::make_unique<IdentifierNode>(ensure(TokenType::IDENTIFIER, "Expected table name.").text)
-                );
-            } while (match(TokenType::COMMA));
+            rootNode->table_names = parse_identifier_list();
+        } else {
+            rootNode-> table_names = parse_identifier_list();
         }
         return rootNode;
     }
+
+    std::vector<std::unique_ptr<IdentifierNode>> Parser::parse_identifier_list() {
+        std::vector<std::unique_ptr<IdentifierNode>> identifiers;
+        do {
+            if (peek().type == TokenType::COMMA) {
+                advance();
+            }
+            identifiers.push_back(
+                    std::make_unique<IdentifierNode>(ensure(TokenType::IDENTIFIER, "Expected table name.").text)
+            );
+        } while (match(TokenType::COMMA));
+        return identifiers;
+    }
+
 
     std::unique_ptr<SelectStatementNode::GroupByClause> Parser::parse_group_by_clause() {
         auto clause = std::make_unique<SelectStatementNode::GroupByClause>();

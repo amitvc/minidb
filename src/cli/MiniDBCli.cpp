@@ -3,7 +3,6 @@
 //
 
 #include "MiniDBCli.h"
-#include "../sql/tokenizer.h"
 #include <iostream>
 #include <algorithm>
 #include <cctype>
@@ -37,7 +36,6 @@ namespace minidb {
         } else if (input.find("insert") == 0) {
             std::cout << "[TODO] Handle INSERT\n";
         } else if (input.find("select") == 0) {
-            //Tokenizer::Tokenize(input);
         } else {
             std::cout << "Unrecognized command.\n";
         }

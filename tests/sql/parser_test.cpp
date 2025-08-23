@@ -18,6 +18,10 @@ protected:
     SelectStatementNode* asSelectStatement(std::unique_ptr<ASTNode>& node) {
         return dynamic_cast<SelectStatementNode*>(node.get());
     }
+
+    DropTableStatementNode* asDropStatement(std::unique_ptr<ASTNode>& node) {
+        return dynamic_cast<DropTableStatementNode*>(node.get());
+    }
     
     // Helper method to cast ExpressionNode to specific types
     IdentifierNode* asIdentifier(std::unique_ptr<ExpressionNode>& expr) {
@@ -429,9 +433,7 @@ TEST_F(ParserTest, SelectWithAllComparisonOperators) {
     ASSERT_NE(whereExpr, nullptr);
     EXPECT_EQ(whereExpr->op, "AND");
     
-    // The WHERE clause should be a chain of AND operations with various comparison operators
-    // We can't easily validate all operators without deeply traversing the AST,
-    // but we can verify the structure is correct
+
 }
 
 TEST_F(ParserTest, SelectWithJoinOnMultipleConditions) {
@@ -657,4 +659,40 @@ TEST_F(ParserTest, SelectNestedParenthesesExpressions) {
     LiteralNode* salaryValue = asLiteral(rightComparison->right);
     ASSERT_NE(salaryValue, nullptr);
     EXPECT_EQ(std::get<int64_t>(salaryValue->value), 50000);
+}
+
+TEST_F(ParserTest, DropTableSingleTable) {
+    std::string query = "DROP TABLE Users;";
+    auto ast = parse_query(query);
+    DropTableStatementNode *dropTableStatementNode = asDropStatement(ast);
+    ASSERT_NE(dropTableStatementNode, nullptr);
+    EXPECT_EQ(dropTableStatementNode->table_names.size(), 1);
+    EXPECT_EQ(dropTableStatementNode->table_names[0]->name, "Users");
+
+}
+
+TEST_F(ParserTest, DropTableMultipleTables) {
+    std::string query = "DROP TABLE Users,Department,Inventory;";
+    auto ast = parse_query(query);
+    DropTableStatementNode *dropTableStatementNode = asDropStatement(ast);
+    ASSERT_NE(dropTableStatementNode, nullptr);
+    EXPECT_EQ(dropTableStatementNode->table_names.size(), 3);
+    std::vector<std::string> tableNames = {"Users", "Department", "Inventory"};
+
+    for (size_t i = 0; i < tableNames.size(); ++i) {
+        EXPECT_EQ(dropTableStatementNode->table_names[i]->name, tableNames.at(i));
+    }
+}
+
+TEST_F(ParserTest, DropTableIfExistsMultipleTables) {
+    std::string query = "DROP TABLE IF EXISTS Users,Department,Inventory;";
+    auto ast = parse_query(query);
+    DropTableStatementNode *dropTableStatementNode = asDropStatement(ast);
+    ASSERT_NE(dropTableStatementNode, nullptr);
+    EXPECT_EQ(dropTableStatementNode->table_names.size(), 3);
+    std::vector<std::string> tableNames = {"Users", "Department", "Inventory"};
+
+    for (size_t i = 0; i < tableNames.size(); ++i) {
+        EXPECT_EQ(dropTableStatementNode->table_names[i]->name, tableNames.at(i));
+    }
 }

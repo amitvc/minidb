@@ -3,12 +3,20 @@ project(minidb)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Set debug flags when in Debug mode
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
 
 file(GLOB_RECURSE DB_SOURCES "src/*.cpp")
 file(GLOB_RECURSE DB_HEADERS "src/*.h")
 
-add_library(minidb ${DB_SOURCES} ${DB_HEADERS}
-        src/sql/ast.h)
+# Remove main.cpp from library sources
+list(REMOVE_ITEM DB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+
+add_library(minidb ${DB_SOURCES} ${DB_HEADERS})
+
+# Create executable
+add_executable(minidb_cli src/main.cpp)
+target_link_libraries(minidb_cli minidb)
 
 
 target_include_directories(minidb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

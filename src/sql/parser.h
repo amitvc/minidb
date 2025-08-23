@@ -122,6 +122,8 @@ namespace minidb {
 
             std::unique_ptr<SelectStatementNode::GroupByClause> parse_group_by_clause();
 
+            std::vector<std::unique_ptr<IdentifierNode>> parse_identifier_list();
+
             /**
              * @brief Entry point for expression parsing with full operator precedence
              * @return ExpressionNode representing the parsed expression
