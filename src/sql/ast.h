@@ -3,6 +3,7 @@
 //
 
 #pragma once
+
 #include <variant>
 #include <string>
 #include <vector>
@@ -18,28 +19,28 @@ namespace minidb {
  * The virtual destructor is crucial for ensuring that derived-class objects
  * are properly destroyed when deleted through a base-class pointer.
  */
-class ASTNode {
-public:
-    enum class NodeType {
-        // Statements
-        SELECT_STATEMENT,
-        INSERT_STATEMENT,
-        UPDATE_STATEMENT,
-        DELETE_STATEMENT,
-        CREATE_TABLE_STATEMENT,
+    class ASTNode {
+    public:
+        enum class NodeType {
+            // Statements
+            SELECT_STATEMENT,
+            INSERT_STATEMENT,
+            UPDATE_STATEMENT,
+            DELETE_STATEMENT,
+            CREATE_TABLE_STATEMENT,
 
-        // Expressions
-        LITERAL,
-        IDENTIFIER,
-        QUALIFIED_IDENTIFIER,
-        BINARY_OPERATION,
-        UNARY_OPERATION,
-        FUNCTION_CALL,
-        STAR_EXPRESSION  // For SELECT *
+            // Expressions
+            LITERAL,
+            IDENTIFIER,
+            QUALIFIED_IDENTIFIER,
+            BINARY_OPERATION,
+            UNARY_OPERATION,
+            FUNCTION_CALL,
+            STAR_EXPRESSION  // For SELECT *
+        };
+
+        virtual ~ASTNode() = default;
     };
-
-    virtual ~ASTNode() = default;
-};
 
 /**
  * @class ExpressionNode
@@ -48,57 +49,59 @@ public:
  * An expression is anything that can be evaluated to a value, such as a literal,
  * a column name, or a binary operation like 'price > 100'.
  */
-class ExpressionNode : public ASTNode {};
+    class ExpressionNode : public ASTNode {
+    };
 
 /**
  * @class LiteralNode
  * @brief Represents a literal value, like a number, string or a bool using std::variant for type safety.
  */
-class LiteralNode : public ExpressionNode {
-public:
-    template<typename T>
-    explicit LiteralNode(T val) : value(std::move(val)) {}
-    std::variant<int64_t, std::string, bool> value;
+    class LiteralNode : public ExpressionNode {
+    public:
+        template<typename T>
+        explicit LiteralNode(T val) : value(std::move(val)) {}
 
-};
+        std::variant<int64_t, std::string, bool> value;
+
+    };
 
 /**
  * @class IdentifierNode
  * @brief Represents an identifier, such as a table or column name.
  */
-class IdentifierNode : public ExpressionNode {
-public:
-    std::string name;
+    class IdentifierNode : public ExpressionNode {
+    public:
+        std::string name;
 
-    explicit IdentifierNode(std::string name) : name(std::move(name)) {}
-};
+        explicit IdentifierNode(std::string name) : name(std::move(name)) {}
+    };
 
 /**
 * @class BinaryOperationNode
 * @brief Represents an operation with two operands, like 'a + b' or 'c > d'.
 */
-class BinaryOperationNode : public ExpressionNode {
-public:
-    std::unique_ptr<ExpressionNode> left;
-    std::string op; // e.g., "=", ">", "AND"
-    std::unique_ptr<ExpressionNode> right;
+    class BinaryOperationNode : public ExpressionNode {
+    public:
+        std::unique_ptr<ExpressionNode> left;
+        std::string op; // e.g., "=", ">", "AND"
+        std::unique_ptr<ExpressionNode> right;
 
-    BinaryOperationNode(std::unique_ptr<ExpressionNode> left, std::string op, std::unique_ptr<ExpressionNode> right)
-            : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
-};
+        BinaryOperationNode(std::unique_ptr<ExpressionNode> left, std::string op, std::unique_ptr<ExpressionNode> right)
+                : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
+    };
 
 /**
  * @class QualifiedIdentifierNode
  * @brief Represents a qualified name, such as 'table.column' or 'alias.column'.
  */
-class QualifiedIdentifierNode : public ExpressionNode {
-public:
-    std::unique_ptr<IdentifierNode> qualifier; // The left part (e.g., 'table' or 'alias')
-    std::unique_ptr<IdentifierNode> name;      // The right part (e.g., 'column')
+    class QualifiedIdentifierNode : public ExpressionNode {
+    public:
+        std::unique_ptr<IdentifierNode> qualifier; // The left part (e.g., 'table' or 'alias')
+        std::unique_ptr<IdentifierNode> name;      // The right part (e.g., 'column')
 
-    QualifiedIdentifierNode(std::unique_ptr<IdentifierNode> qualifier, std::unique_ptr<IdentifierNode> name)
-            : qualifier(std::move(qualifier)), name(std::move(name)) {}
-};
+        QualifiedIdentifierNode(std::unique_ptr<IdentifierNode> qualifier, std::unique_ptr<IdentifierNode> name)
+                : qualifier(std::move(qualifier)), name(std::move(name)) {}
+    };
 
     /**
      * @class SelectStatementNode
@@ -152,6 +155,30 @@ public:
         bool if_exists = false;
         // This holds the table names
         std::vector<std::unique_ptr<IdentifierNode>> table_names;
+    };
+
+
+    /**
+     * @class CreateTableStatementNode
+     * @brief Represents a full CREATE TABLE statement. This is a top-level AST node.
+     *
+     */
+    class CreateTableStatementNode final : public ASTNode {
+    public:
+
+        /**
+         * @struct ColumnDefinition
+         * @brief Represents the definition of a single column in a table.
+         */
+        struct ColumnDefinition {
+            std::unique_ptr<IdentifierNode> name;
+            TokenType type; // e.g., TokenType::INT, TokenType::VARCHAR or TokenType::BOOL
+            int size = 0; // For VARCHAR data type.
+        };
+
+        std::vector<std::unique_ptr<ColumnDefinition>> columns;
+        std::unique_ptr<IdentifierNode> table_name;
+        std::vector<std::unique_ptr<IdentifierNode>> primary_key_columns; // Supports multi-column primary key.
     };
 
 } // namespace minidb

@@ -42,10 +42,8 @@ namespace minidb {
                 break;
             case TokenType::DROP:
                 return parse_drop_node();
-                break;
             case TokenType::CREATE:
-                //TODO implement parse_create_node();
-                break;
+                return parse_create_node();
             default:
                 throw std::runtime_error("Unsupported statement type: " + peek().text);
         }
@@ -101,7 +99,95 @@ namespace minidb {
         return rootNode;
     }
 
-    /**
+    std::unique_ptr<ASTNode> Parser::parse_create_node() {
+        ensure(TokenType::CREATE,  "Expected 'CREATE' keyword.");
+        if (match(TokenType::TABLE)) {
+            return parse_create_table_node();
+        } else if (match(TokenType::INDEX)) {
+            return parse_create_index_node();
+        }
+        throw std::runtime_error("Expected TABLE or INDEX after CREATE");
+    }
+
+	std::unique_ptr<ASTNode> Parser::parse_create_table_node() {
+	  auto rootNode = std::make_unique<CreateTableStatementNode>();
+	  ensure(TokenType::TABLE, "Expected token Table ");
+	  auto tableName = ensure(TokenType::IDENTIFIER, "Expected table name");
+	  rootNode->table_name = std::make_unique<IdentifierNode>(tableName.text);
+
+	  ensure(TokenType::LPAREN, "Expected token ( ");
+
+	  // Parse column definitions and constraints
+	  do {
+
+		if (match(TokenType::COMMA)) {
+		  advance();
+		}
+
+		if (match(TokenType::IDENTIFIER)) {
+		  auto columnDef = std::make_unique<CreateTableStatementNode::ColumnDefinition>();
+
+		  // Parse column name
+		  auto columnName = ensure(TokenType::IDENTIFIER, "Expected column name");
+		  columnDef->name = std::make_unique<IdentifierNode>(columnName.text);
+
+		  if (match(TokenType::INT)) {
+			columnDef->type = TokenType::INT;
+			advance();
+		  } else if (match(TokenType::BOOL)) {
+			columnDef->type = TokenType::BOOL;
+			advance();
+		  } else if (match(TokenType::VARCHAR)) {
+			columnDef->type = TokenType::VARCHAR;
+			advance();
+			if (match(TokenType::LPAREN)) {
+			  advance(); // consume '('
+			  auto sizeToken = ensure(TokenType::INT_LITERAL, "Expected size for VARCHAR");
+			  columnDef->size = std::stoi(sizeToken.text);
+			  ensure(TokenType::RPAREN, "Expected ')' after VARCHAR size");
+			}
+		  } else {
+			throw std::runtime_error("Unexpected Column type specified. Found " + peek().text);
+		  }
+
+		  if (match(TokenType::PRIMARY)) {
+			advance();
+			ensure(TokenType::KEY, "Expected token KEY");
+			rootNode->primary_key_columns.push_back(std::make_unique<IdentifierNode>(columnName.text));
+		  }
+		  rootNode->columns.push_back(std::move(columnDef));
+		}
+
+		if (match(TokenType::PRIMARY)) {
+		  advance();
+		  ensure(TokenType::KEY, "Expected token KEY");
+		  ensure(TokenType::LPAREN, "Expected token (");
+		  do {
+			if (match(TokenType::COMMA)) {
+			  advance();
+			}
+			if (match(TokenType::IDENTIFIER)) {
+			  rootNode->primary_key_columns.push_back(std::make_unique<IdentifierNode>(tokens[pos].text));
+			  advance();
+			}
+		  } while (match(TokenType::COMMA));
+		  ensure(TokenType::RPAREN, "Expected ')' after primary key columns");
+		  continue;
+
+		}
+	  } while (match(TokenType::COMMA));
+
+	  ensure(TokenType::RPAREN, "Expected token ) ");
+
+	  return rootNode;
+	}
+
+    std::unique_ptr<ASTNode> Parser::parse_create_index_node() {
+        throw std::runtime_error("CREATE INDEX not yet implemented");
+    }
+
+
+/**
      * @brief Parses a complete DROP statement.
      * Handles the full DROP statement syntax:
      * DROP IF EXISTS table list

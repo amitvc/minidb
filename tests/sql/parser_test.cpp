@@ -23,6 +23,10 @@ protected:
         return dynamic_cast<DropTableStatementNode*>(node.get());
     }
     
+    CreateTableStatementNode* asCreateTableStatement(std::unique_ptr<ASTNode>& node) {
+        return dynamic_cast<CreateTableStatementNode*>(node.get());
+    }
+    
     // Helper method to cast ExpressionNode to specific types
     IdentifierNode* asIdentifier(std::unique_ptr<ExpressionNode>& expr) {
         return dynamic_cast<IdentifierNode*>(expr.get());
@@ -695,4 +699,203 @@ TEST_F(ParserTest, DropTableIfExistsMultipleTables) {
     for (size_t i = 0; i < tableNames.size(); ++i) {
         EXPECT_EQ(dropTableStatementNode->table_names[i]->name, tableNames.at(i));
     }
+}
+
+TEST_F(ParserTest, CreateTableSimpleQuery) {
+    std::string query = "CREATE TABLE users (id INT, username VARCHAR, is_active BOOL);";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "users");
+    
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 3);
+    
+    // First column: id INT
+    EXPECT_EQ(createNode->columns[0]->name->name, "id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[0]->size, 0);
+    
+    // Second column: username VARCHAR
+    EXPECT_EQ(createNode->columns[1]->name->name, "username");
+    EXPECT_EQ(createNode->columns[1]->type, TokenType::VARCHAR);
+    EXPECT_EQ(createNode->columns[1]->size, 0);
+    
+    // Third column: is_active BOOL
+    EXPECT_EQ(createNode->columns[2]->name->name, "is_active");
+    EXPECT_EQ(createNode->columns[2]->type, TokenType::BOOL);
+    EXPECT_EQ(createNode->columns[2]->size, 0);
+}
+
+TEST_F(ParserTest, CreateTableWithVarcharSize) {
+    std::string query = "CREATE TABLE users (id INT, username VARCHAR(255), description VARCHAR(1000));";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "users");
+    
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 3);
+    
+    // First column: id INT
+    EXPECT_EQ(createNode->columns[0]->name->name, "id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[0]->size, 0);
+    
+    // Second column: username VARCHAR(255)
+    EXPECT_EQ(createNode->columns[1]->name->name, "username");
+    EXPECT_EQ(createNode->columns[1]->type, TokenType::VARCHAR);
+    EXPECT_EQ(createNode->columns[1]->size, 255);
+    
+    // Third column: description VARCHAR(1000)
+    EXPECT_EQ(createNode->columns[2]->name->name, "description");
+    EXPECT_EQ(createNode->columns[2]->type, TokenType::VARCHAR);
+    EXPECT_EQ(createNode->columns[2]->size, 1000);
+}
+
+TEST_F(ParserTest, CreateTableSingleColumn) {
+    std::string query = "CREATE TABLE simple_table (id INT);";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "simple_table");
+    
+    // Verify single column
+    ASSERT_EQ(createNode->columns.size(), 1);
+    EXPECT_EQ(createNode->columns[0]->name->name, "id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[0]->size, 0);
+}
+
+TEST_F(ParserTest, CreateTableAllDataTypes) {
+    std::string query = "CREATE TABLE all_types (num INT, text VARCHAR(50), flag BOOL);";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "all_types");
+    
+    // Verify all supported data types
+    ASSERT_EQ(createNode->columns.size(), 3);
+    
+    EXPECT_EQ(createNode->columns[0]->name->name, "num");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    
+    EXPECT_EQ(createNode->columns[1]->name->name, "text");
+    EXPECT_EQ(createNode->columns[1]->type, TokenType::VARCHAR);
+    EXPECT_EQ(createNode->columns[1]->size, 50);
+    
+    EXPECT_EQ(createNode->columns[2]->name->name, "flag");
+    EXPECT_EQ(createNode->columns[2]->type, TokenType::BOOL);
+    
+    // No primary key defined
+    EXPECT_EQ(createNode->primary_key_columns.size(), 0);
+}
+
+TEST_F(ParserTest, CreateTableWithColumnLevelPrimaryKey) {
+    std::string query = "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100), active BOOL);";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "users");
+    
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 3);
+    EXPECT_EQ(createNode->columns[0]->name->name, "id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    
+    // Verify primary key
+    ASSERT_EQ(createNode->primary_key_columns.size(), 1);
+    EXPECT_EQ(createNode->primary_key_columns[0]->name, "id");
+}
+
+TEST_F(ParserTest, CreateTableWithTableLevelSinglePrimaryKey) {
+    std::string query = "CREATE TABLE users (id INT, name VARCHAR(100), PRIMARY KEY (id));";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "users");
+    
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 2);
+    EXPECT_EQ(createNode->columns[0]->name->name, "id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[1]->name->name, "name");
+    EXPECT_EQ(createNode->columns[1]->type, TokenType::VARCHAR);
+    
+    // Verify primary key
+    ASSERT_EQ(createNode->primary_key_columns.size(), 1);
+    EXPECT_EQ(createNode->primary_key_columns[0]->name, "id");
+}
+
+TEST_F(ParserTest, CreateTableWithTableLevelCompositePrimaryKey) {
+    std::string query = "CREATE TABLE user_roles (user_id INT, role_id INT, assigned_date VARCHAR(20), PRIMARY KEY (user_id, role_id));";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "user_roles");
+    
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 3);
+    EXPECT_EQ(createNode->columns[0]->name->name, "user_id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[1]->name->name, "role_id");
+    EXPECT_EQ(createNode->columns[1]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[2]->name->name, "assigned_date");
+    EXPECT_EQ(createNode->columns[2]->type, TokenType::VARCHAR);
+    
+    // Verify composite primary key
+    ASSERT_EQ(createNode->primary_key_columns.size(), 2);
+    EXPECT_EQ(createNode->primary_key_columns[0]->name, "user_id");
+    EXPECT_EQ(createNode->primary_key_columns[1]->name, "role_id");
+}
+
+TEST_F(ParserTest, CreateTableWithMixedColumns) {
+    std::string query = "CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(255), price INT, description VARCHAR(1000), is_active BOOL);";
+    auto ast = parse_query(query);
+    
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+    
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "products");
+    
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 5);
+    EXPECT_EQ(createNode->columns[0]->name->name, "id");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[1]->name->name, "name");
+    EXPECT_EQ(createNode->columns[1]->type, TokenType::VARCHAR);
+    EXPECT_EQ(createNode->columns[1]->size, 255);
+    EXPECT_EQ(createNode->columns[2]->name->name, "price");
+    EXPECT_EQ(createNode->columns[2]->type, TokenType::INT);
+    EXPECT_EQ(createNode->columns[3]->name->name, "description");
+    EXPECT_EQ(createNode->columns[3]->type, TokenType::VARCHAR);
+    EXPECT_EQ(createNode->columns[3]->size, 1000);
+    EXPECT_EQ(createNode->columns[4]->name->name, "is_active");
+    EXPECT_EQ(createNode->columns[4]->type, TokenType::BOOL);
+    
+    // Verify primary key
+    ASSERT_EQ(createNode->primary_key_columns.size(), 1);
+    EXPECT_EQ(createNode->primary_key_columns[0]->name, "id");
 }

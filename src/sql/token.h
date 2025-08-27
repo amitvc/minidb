@@ -17,10 +17,10 @@ namespace minidb {
 
         // Keywords
         SELECT, FROM, WHERE, INSERT, INTO, VALUES,
-        UPDATE, SET, DELETE, CREATE, TABLE, DROP,
+        UPDATE, SET, DELETE, CREATE, TABLE, INDEX, DROP,
         INT, FLOAT, VARCHAR, BOOL, JOIN,
         ON, GROUP, BY, HAVING, ORDER, ASC, DESC,
-        IF, EXISTS,
+        IF, EXISTS, PRIMARY, KEY,
 
         // Operators
         EQ, NE, GT, LT, GTE, LTE,

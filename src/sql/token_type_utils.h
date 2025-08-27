@@ -20,9 +20,12 @@ namespace minidb {
                 {"DELETE", TokenType::DELETE},
                 {"CREATE", TokenType::CREATE},
                 {"TABLE", TokenType::TABLE},
+                {"INDEX", TokenType::INDEX},
                 {"DROP", TokenType::DROP},
                 {"IF", TokenType::IF},
                 {"EXISTS", TokenType::EXISTS},
+                {"PRIMARY", TokenType::PRIMARY},
+                {"KEY", TokenType::KEY},
 
                 {"INT", TokenType::INT},
                 {"FLOAT", TokenType::FLOAT},

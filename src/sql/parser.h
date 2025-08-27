@@ -137,15 +137,18 @@ namespace minidb {
             std::unique_ptr<ASTNode> parse_insert_node();   ///< TODO: Parse INSERT statements
             std::unique_ptr<ASTNode> parse_delete_node();   ///< TODO: Parse DELETE statements
             std::unique_ptr<ASTNode> parse_update_node();   ///< TODO: Parse UPDATE statements
-            std::unique_ptr<ASTNode> parse_create_node();   ///< TODO: Parse CREATE statements
-            std::unique_ptr<ASTNode> parse_drop_node();     ///< TODO: Parse DROP statements
-            
+            std::unique_ptr<ASTNode> parse_create_node();
+            std::unique_ptr<ASTNode> parse_create_table_node();
+            std::unique_ptr<ASTNode> parse_create_index_node();
+            std::unique_ptr<ASTNode> parse_drop_node();
+
             /**
              * @brief Checks if current token matches the given type without consuming it
              * @param type TokenType to match against
              * @return true if current token matches type and we're not at end, false otherwise
              */
             bool match(TokenType type);
+
     };
 }
 
