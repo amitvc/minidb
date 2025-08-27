@@ -899,3 +899,136 @@ TEST_F(ParserTest, CreateTableWithMixedColumns) {
     ASSERT_EQ(createNode->primary_key_columns.size(), 1);
     EXPECT_EQ(createNode->primary_key_columns[0]->name, "id");
 }
+
+TEST_F(ParserTest, ErrorThrownOnSelectCommandWithNoColumn) {
+    // Test ensure() throws runtime_error when expected token type doesn't match
+    std::string query = "SELECT FROM users;";  // Missing * or column name
+
+    
+    // Try to ensure IDENTIFIER but get FROM instead - should throw
+    EXPECT_THROW({
+	  parse_query(query);
+    }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnSelectCommandWithNoFrom) {
+  // Test ensure() throws runtime_error when expected token type doesn't match
+  std::string query = "SELECT * users;";  // Missing * or column name
+
+
+  // Try to ensure IDENTIFIER but get FROM instead - should throw
+  EXPECT_THROW({
+				 parse_query(query);
+			   }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnDropCommandWithNoTables) {
+  // Test ensure() throws runtime_error when expected token type doesn't match
+  std::string query = "DROP TABLE;";  // Missing * or column name
+
+
+  // Try to ensure IDENTIFIER but get FROM instead - should throw
+  EXPECT_THROW({
+				 parse_query(query);
+			   }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnDropCommandWithIncompleteIfExistsClause) {
+  // Test ensure() throws runtime_error when expected token type doesn't match
+  std::string query = "DROP TABLE IF users,department;";  // Missing * or column name
+
+
+  // Try to ensure IDENTIFIER but get FROM instead - should throw
+  EXPECT_THROW({
+				 parse_query(query);
+			   }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingTableKeyword) {
+  std::string query = "CREATE users (id INT);";  // Missing TABLE keyword
+
+  // Should throw when ensure(TABLE) is called
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingTableName) {
+  std::string query = "CREATE TABLE (id INT);";  // Missing table name
+
+  // Should throw when ensure(IDENTIFIER) is called for table name
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingOpeningParen) {
+  std::string query = "CREATE TABLE users id INT);";  // Missing opening paren
+
+  // Should throw when ensure(LPAREN) is called
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingColumnName) {
+  std::string query = "CREATE TABLE users (INT);";  // Missing column name
+
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingVarcharSize) {
+  std::string query = "CREATE TABLE users (name VARCHAR());";  // Missing size in VARCHAR
+
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingVarcharClosingParen) {
+  std::string query = "CREATE TABLE users (name VARCHAR(255);";  // Missing ) after VARCHAR size
+
+  // Should throw when ensure(RPAREN) is called after VARCHAR size
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingPrimaryKeyword) {
+  std::string query = "CREATE TABLE users (id INT KEY);";  // Missing PRIMARY before KEY
+
+  // Should throw when ensure(KEY) is called after PRIMARY
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingPrimaryKeyOpeningParen) {
+  std::string query = "CREATE TABLE users (id INT, PRIMARY KEY id);";  // Missing ( before column list
+
+  // Should throw when ensure(LPAREN) is called for PRIMARY KEY
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingPrimaryKeyClosingParen) {
+  std::string query = "CREATE TABLE users (id INT, PRIMARY KEY (id;";  // Missing ) after column list
+
+  // Should throw when ensure(RPAREN) is called for PRIMARY KEY
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, ErrorThrownOnCreateTableMissingClosingParen) {
+  // Test ensure() throws runtime_error when table closing parenthesis is missing
+  std::string query = "CREATE TABLE users (id INT;";  // Missing closing paren
+
+  // Should throw when ensure(RPAREN) is called for table definition
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
