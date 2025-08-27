@@ -1,4 +1,4 @@
-## MiniDB
+## MiniDB (WORK IN PROGRESS)
 Welcome to the MiniDB SQL Database project! Once completely built it will be a fully functional, disk-based relational database management system (RDBMS) written from scratch in modern C++. The primary goal of this project is to serve as a learning tool for understanding the internal workings of a database, from SQL parsing to transaction management, data storage and indexing on disk.
 
 ## Features
