@@ -26,6 +26,10 @@ protected:
     CreateTableStatementNode* asCreateTableStatement(std::unique_ptr<ASTNode>& node) {
         return dynamic_cast<CreateTableStatementNode*>(node.get());
     }
+
+	InsertStatementNode* asInsertStatement(std::unique_ptr<ASTNode> &node) {
+	  return dynamic_cast<InsertStatementNode*>(node.get());
+	}
     
     // Helper method to cast ExpressionNode to specific types
     IdentifierNode* asIdentifier(std::unique_ptr<ExpressionNode>& expr) {
@@ -1024,11 +1028,64 @@ TEST_F(ParserTest, ErrorThrownOnCreateTableMissingPrimaryKeyClosingParen) {
 }
 
 TEST_F(ParserTest, ErrorThrownOnCreateTableMissingClosingParen) {
-  // Test ensure() throws runtime_error when table closing parenthesis is missing
   std::string query = "CREATE TABLE users (id INT;";  // Missing closing paren
 
   // Should throw when ensure(RPAREN) is called for table definition
   EXPECT_THROW({
     parse_query(query);
   }, std::runtime_error);
+}
+
+TEST_F(ParserTest, SimpleInsertStatement) {
+  std::string query = "INSERT INTO  users  VALUES (10, 'test', FALSE);";
+  auto ast = parse_query(query);
+  auto root = asInsertStatement(ast);
+  ASSERT_NE(root, nullptr);
+  ASSERT_EQ(root->tableName->name, "users");
+  ASSERT_EQ(root->columnNames.size(), 0);
+  ASSERT_EQ(root->values.size(), 1);
+  ASSERT_EQ(root->values[0].size(), 3);
+  ASSERT_EQ(std::get<int64_t>(root->values[0][0]->value), 10);
+  ASSERT_EQ(std::get<std::string>(root->values[0][1]->value), "test");
+  ASSERT_EQ(std::get<bool>(root->values[0][2]->value), false);
+
+}
+
+TEST_F(ParserTest, SimpleInsertStatementWithColumns) {
+  std::string query = "INSERT INTO  users (id, name, isAlive) VALUES (10, 'test', FALSE);";
+  auto ast = parse_query(query);
+  auto root = asInsertStatement(ast);
+  ASSERT_NE(root, nullptr);
+  ASSERT_EQ(root->tableName->name, "users");
+  ASSERT_EQ(root->columnNames.size(), 3);
+  ASSERT_EQ(root->columnNames[0]->name, "id");
+  ASSERT_EQ(root->columnNames[1]->name, "name");
+  ASSERT_EQ(root->columnNames[2]->name, "isAlive");
+
+  ASSERT_EQ(root->values.size(), 1);
+  ASSERT_EQ(root->values[0].size(), 3);
+  ASSERT_EQ(std::get<int64_t>(root->values[0][0]->value), 10);
+  ASSERT_EQ(std::get<std::string>(root->values[0][1]->value), "test");
+  ASSERT_EQ(std::get<bool>(root->values[0][2]->value), false);
+}
+
+TEST_F(ParserTest, MultiInsertStatementWithColumns) {
+  std::string query = "INSERT INTO  users (id, name, isAlive) VALUES (10, 'test', FALSE), (12, 'test', TRUE);";
+  auto ast = parse_query(query);
+  auto root = asInsertStatement(ast);
+  ASSERT_NE(root, nullptr);
+  ASSERT_EQ(root->tableName->name, "users");
+  ASSERT_EQ(root->columnNames.size(), 3);
+  ASSERT_EQ(root->columnNames[0]->name, "id");
+  ASSERT_EQ(root->columnNames[1]->name, "name");
+  ASSERT_EQ(root->columnNames[2]->name, "isAlive");
+
+  ASSERT_EQ(root->values.size(), 2);
+  ASSERT_EQ(root->values[0].size(), 3);
+  ASSERT_EQ(std::get<int64_t>(root->values[0][0]->value), 10);
+  ASSERT_EQ(std::get<std::string>(root->values[0][1]->value), "test");
+  ASSERT_EQ(std::get<bool>(root->values[0][2]->value), false);
+  ASSERT_EQ(std::get<int64_t>(root->values[1][0]->value), 12);
+  ASSERT_EQ(std::get<std::string>(root->values[1][1]->value), "test");
+  ASSERT_EQ(std::get<bool>(root->values[1][2]->value), true);
 }

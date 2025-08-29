@@ -133,6 +133,12 @@ namespace minidb {
             std::unique_ptr<ExpressionNode> parse_relational_expression();
             std::vector<std::unique_ptr<ExpressionNode>> parse_expression_list();
 
+            /**
+             * @brief Parses a comma-separated list of literal values enclosed in parentheses
+             * @return Vector of LiteralNode pointers representing the parsed values
+             */
+            std::vector<std::unique_ptr<LiteralNode>> parse_value_list();
+
             // Future statement parsers (not yet implemented)
             std::unique_ptr<ASTNode> parse_insert_node();   ///< TODO: Parse INSERT statements
             std::unique_ptr<ASTNode> parse_delete_node();   ///< TODO: Parse DELETE statements

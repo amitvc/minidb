@@ -32,8 +32,7 @@ namespace minidb {
             case TokenType::SELECT:
                 return parse_select_node();
             case TokenType::INSERT:
-                //TODO implement parse_insert_node();
-                break;
+			  	return parse_insert_node();
             case TokenType::DELETE:
                 //TODO implement parse_delete_node();
                 break;
@@ -99,7 +98,64 @@ namespace minidb {
         return rootNode;
     }
 
-    std::unique_ptr<ASTNode> Parser::parse_create_node() {
+	std::unique_ptr<ASTNode> Parser::parse_insert_node() {
+	  	ensure(TokenType::INSERT,  "Expected 'CREATE' keyword.");
+	  	ensure(TokenType::INTO, "Expected INTO keyword ");
+	  	auto rootNode = std::make_unique<InsertStatementNode>();
+		if (match(TokenType::IDENTIFIER)) {
+			rootNode->tableName = std::make_unique<IdentifierNode>(peek().text);
+			advance();
+		}
+
+		// If we find column names
+		if (match(TokenType::LPAREN)) {
+		  advance();
+		  rootNode->columnNames = parse_identifier_list();
+		  ensure(TokenType::RPAREN, "Expecting )");
+		}
+
+		if (match(TokenType::VALUES)) {
+			this->advance();
+			do {
+			  if (match(TokenType::COMMA)) {
+				advance();
+			  }
+			  rootNode->values.push_back(parse_value_list());
+			} while (match(TokenType::COMMA));
+		}
+		return rootNode;
+	}
+
+std::vector<std::unique_ptr<LiteralNode>> Parser::parse_value_list() {
+		ensure(TokenType::LPAREN, "Expected ( ");
+		std::vector<std::unique_ptr<LiteralNode>> values;
+		
+		do {
+			if (match(TokenType::COMMA)) {
+				advance();
+			}
+			switch (peek().type) {
+				case TokenType::INT_LITERAL:
+					values.push_back(std::make_unique<LiteralNode>(std::stoll(peek().text)));
+					break;
+				case TokenType::STRING_LITERAL:
+					values.push_back(std::make_unique<LiteralNode>(peek().text));
+					break;
+				case TokenType::TRUE:
+					values.push_back(std::make_unique<LiteralNode>(true));
+					break;
+				case TokenType::FALSE:
+					values.push_back(std::make_unique<LiteralNode>(false));
+					break;
+			}
+			advance();
+		} while (match(TokenType::COMMA));
+		
+		ensure(TokenType::RPAREN, "Expected )");
+		return values;
+	}
+
+std::unique_ptr<ASTNode> Parser::parse_create_node() {
         ensure(TokenType::CREATE,  "Expected 'CREATE' keyword.");
         if (match(TokenType::TABLE)) {
             return parse_create_table_node();

@@ -142,6 +142,7 @@ namespace minidb {
         while (!has_ended() && peek() != '\'') {
             value += advance();
         }
+		advance(); // skip the closing '
         return {TokenType::STRING_LITERAL, value};
     }
 
@@ -246,11 +247,6 @@ namespace minidb {
 
         spdlog::info("Unexpected character {} ", unexpected_char );
 
-
-        // Optionally, we could add logging here in the future
-        // std::cerr << "Unexpected character '" << unexpected_char 
-        //           << "' at position " << (curr_pos - 1) << std::endl;
-        
         return {TokenType::UNKNOWN, error_value};
     }
 }

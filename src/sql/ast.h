@@ -150,6 +150,10 @@ namespace minidb {
         std::vector<OrderByClause> order_by;
     };
 
+	/**
+	 * @class DropTableStatementNode
+	 * @brief Represents Drop table statement AST node.
+	 */
     class DropTableStatementNode final : public ASTNode {
     public:
         bool if_exists = false;
@@ -157,6 +161,19 @@ namespace minidb {
         std::vector<std::unique_ptr<IdentifierNode>> table_names;
     };
 
+	/**
+	 * @class  InsertStatementNode
+	 * @brief Represents Insert  statement AST node.
+	 */
+	class InsertStatementNode final : public ASTNode {
+	 public:
+	  	std::unique_ptr<IdentifierNode> tableName;
+		// This is optional
+		std::vector<std::unique_ptr<IdentifierNode>> columnNames;
+
+		// Keep list -> list [values]
+		std::vector<std::vector<std::unique_ptr<LiteralNode>>> values;
+	};
 
     /**
      * @class CreateTableStatementNode
