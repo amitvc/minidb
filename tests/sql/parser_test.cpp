@@ -1089,3 +1089,74 @@ TEST_F(ParserTest, MultiInsertStatementWithColumns) {
   ASSERT_EQ(std::get<std::string>(root->values[1][1]->value), "test");
   ASSERT_EQ(std::get<bool>(root->values[1][2]->value), true);
 }
+
+// Error-thrown style tests for INSERT command
+TEST_F(ParserTest, InsertMissingIntoKeyword) {
+  std::string query = "INSERT users VALUES (1, 'test');";  // Missing INTO
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertMissingTableName) {
+  std::string query = "INSERT INTO VALUES (1, 'test');";  // Missing table name
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertMissingValuesKeyword) {
+  std::string query = "INSERT INTO users (1, 'test');";  // Missing VALUES
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertMissingLeftParen) {
+  std::string query = "INSERT INTO users VALUES 1, 'test');";  // Missing (
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertMissingRightParen) {
+  std::string query = "INSERT INTO users VALUES (1, 'test';";  // Missing )
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertMissingLeftParenInColumns) {
+  std::string query = "INSERT INTO users id, name) VALUES (1, 'test');";  // Missing ( for columns
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertMissingRightParenInColumns) {
+  std::string query = "INSERT INTO users (id, name VALUES (1, 'test');";  // Missing ) for columns
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertEmptyValues) {
+  std::string query = "INSERT INTO users VALUES ();";  // Empty values
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertTrailingCommaInValues) {
+  std::string query = "INSERT INTO users VALUES (1, 'test',);";  // Trailing comma in values
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}
+
+TEST_F(ParserTest, InsertTrailingCommaInMultipleRows) {
+  std::string query = "INSERT INTO users VALUES (1, 'test'), (2, 'test2'),;";  // Trailing comma in multiple rows
+  EXPECT_THROW({
+    parse_query(query);
+  }, std::runtime_error);
+}

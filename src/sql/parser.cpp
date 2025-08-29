@@ -99,19 +99,20 @@ namespace minidb {
     }
 
 	std::unique_ptr<ASTNode> Parser::parse_insert_node() {
+	    auto rootNode = std::make_unique<InsertStatementNode>();
 	  	ensure(TokenType::INSERT,  "Expected 'CREATE' keyword.");
 	  	ensure(TokenType::INTO, "Expected INTO keyword ");
-	  	auto rootNode = std::make_unique<InsertStatementNode>();
-		if (match(TokenType::IDENTIFIER)) {
-			rootNode->tableName = std::make_unique<IdentifierNode>(peek().text);
-			advance();
-		}
+	  	const Token& tableNameToken = ensure(TokenType::IDENTIFIER, "Expected Identifier for table name");
+	  	rootNode->tableName = std::make_unique<IdentifierNode>(tableNameToken.text);
 
 		// If we find column names
 		if (match(TokenType::LPAREN)) {
 		  advance();
 		  rootNode->columnNames = parse_identifier_list();
 		  ensure(TokenType::RPAREN, "Expecting )");
+		} else if (match(TokenType::IDENTIFIER)) {
+		  // Error: identifier found without opening parenthesis
+		  throw std::runtime_error("Expected '(' before column list or VALUES keyword");
 		}
 
 		if (match(TokenType::VALUES)) {
