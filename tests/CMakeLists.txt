@@ -13,14 +13,16 @@ FetchContent_Declare(
 # Make the gtest and gtest_main targets available
 FetchContent_MakeAvailable(googletest)
 
-add_executable(minidb_test sql/lexer_test.cpp
-        sql/parser_test.cpp
-        sql/test_utils.h)
+file(GLOB_RECURSE DB_SOURCES "*.cpp")
+file(GLOB_RECURSE DB_HEADERS "*.h")
+
+add_executable(minidb_test ${DB_SOURCES} ${DB_HEADERS})
 
 target_link_libraries(minidb_test PRIVATE minidb
         gtest_main
 )
 
+target_include_directories(minidb_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 include(GoogleTest)
 gtest_discover_tests(minidb_test)
