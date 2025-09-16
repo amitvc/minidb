@@ -5,27 +5,31 @@
 #include "disk_manager.h"
 #include "storage/config.h"
 #include <iostream>
+#include <cassert>
 
 DiskManager::DiskManager(const std::string& db_file) : file_name_(db_file) {
+  assert(!file_name_.empty() && "Database file path cannot be empty");
+
   // Open the file with flags for reading, writing, and binary mode.
   db_file_.open(file_name_, std::ios::in | std::ios::out | std::ios::binary);
 
   // If the file cannot be opened (e.g., because it doesn't exist), we create it.
   if (!db_file_.is_open()) {
-	// The `trunc` flag creates the file if it doesn't exist.
+
+	// The `trunc` flag creates file if it does not exist.
 	db_file_.open(file_name_, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	//std::cout << "Absolute path: " << std::filesystem::absolute(file_name_) << std::endl;
 
 	if (!db_file_.is_open()) {
-	  // If it still fails, we have a serious problem (e.g., permissions).
-	  std::cerr << "FATAL: Failed to create or open database file: " << file_name_ << std::endl;
+	  // We can't proceed without db file.
+	  throw std::runtime_error("FATAL: Failed to create or open database file: " + file_name_);
 	}
   }
 }
 
 DiskManager::~DiskManager() {
   if (db_file_.is_open()) {
-	db_file_.close();
+	db_file_.flush();
+	db_file_.close(); // close the db file
   }
 }
 

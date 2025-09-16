@@ -5,6 +5,7 @@
 #pragma once
 
 #include "config.h"
+#include <cstddef>
 
 /**
  * @enum PageType
@@ -55,5 +56,53 @@ struct BitmapPage {
   // 4 (type) + 4 (next_id) = 8 bytes for the header
   char bitmap[PAGE_SIZE - 8];
 };
-
 #pragma pack()
+
+/**
+ * @class Bitmap
+ * @brief A helper class to manipulate raw bits stored in the bitmap array insided the BitmapPage class
+ *
+ */
+class Bitmap {
+ public:
+  /**
+   * @brief Constructs a Bitmap wrapper around raw bitmap data.
+   * @param data A pointer to the start of the bitmap data (e.g., BitmapPage::bitmap).
+   * @param size_in_bits The total number of bits the bitmap can hold.
+   */
+  explicit Bitmap(char* data, size_t size_in_bits)
+	  : data(reinterpret_cast<uint8_t*>(data)), size(size_in_bits) {}
+
+  /**
+   * @brief Checks if a specific bit is set to 1.
+   * @param bit_index The index of the bit to check.
+   * @return True if the bit is set, false otherwise.
+   */
+  bool is_set(uint32_t bit_index) const {
+	if (bit_index >= size) return false;
+	// Find the byte, then check the specific bit within that byte.
+	return (data[bit_index / 8] & (1 << (bit_index % 8))) != 0;
+  }
+
+  /**
+   * @brief Sets a specific bit to 1.
+   * @param bit_index The index of the bit to set.
+   */
+  void set(uint32_t bit_index) {
+	if (bit_index >= size) return;
+	data[bit_index / 8] |= (1 << (bit_index % 8));
+  }
+
+  /**
+   * @brief Clears a specific bit, setting it to 0.
+   * @param bit_index The index of the bit to clear.
+   */
+  void clear(uint32_t bit_index) {
+	if (bit_index >= size) return;
+	data[bit_index / 8] &= ~(1 << (bit_index % 8));
+  }
+
+ private:
+  uint8_t* data;
+  size_t size;
+};
