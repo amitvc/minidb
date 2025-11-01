@@ -23,5 +23,8 @@ static constexpr int PAGE_SIZE = 4096; // 4kb pages
 
 static constexpr int EXTENT_SIZE = 8;       // 8 pages per extent
 static constexpr int INVALID_PAGE_ID = -1;
+static constexpr int HEADER_PAGE_ID = 0;
+static constexpr page_id_t FIRST_GAM_PAGE_ID = 1;
+
 
 

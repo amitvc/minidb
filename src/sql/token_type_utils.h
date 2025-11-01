@@ -31,6 +31,8 @@ namespace minidb {
                 {"FLOAT", TokenType::FLOAT},
                 {"VARCHAR", TokenType::VARCHAR},
                 {"BOOL", TokenType::BOOL},
+                {"DATE", TokenType::DATE},
+                {"TIMESTAMP", TokenType::TIMESTAMP},
                 {"JOIN", TokenType::JOIN},
                 {"ON", TokenType::ON},
                 {"GROUP", TokenType::GROUP},

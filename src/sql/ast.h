@@ -11,6 +11,14 @@
 
 namespace minidb {
 
+    struct SQLDate {
+        int year, month, day;
+    };
+
+    struct SQLTimestamp {
+        int year, month, day, hour, minute, second;
+    };
+
 /**
  * @class ASTNode
  * @brief The base class for all nodes in the Abstract Syntax Tree.
@@ -61,7 +69,7 @@ namespace minidb {
         template<typename T>
         explicit LiteralNode(T val) : value(std::move(val)) {}
 
-        std::variant<int64_t, std::string, bool> value;
+        std::variant<int64_t, double, std::string, bool, SQLDate, SQLTimestamp> value;
 
     };
 

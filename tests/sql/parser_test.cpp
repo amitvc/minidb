@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 #include "sql/lexer.h"
 #include <vector>
+#include "sql/ast.h"
 
 using namespace minidb;
 
@@ -872,6 +873,169 @@ TEST_F(ParserTest, CreateTableWithTableLevelCompositePrimaryKey) {
     ASSERT_EQ(createNode->primary_key_columns.size(), 2);
     EXPECT_EQ(createNode->primary_key_columns[0]->name, "user_id");
     EXPECT_EQ(createNode->primary_key_columns[1]->name, "role_id");
+}
+
+TEST_F(ParserTest, CreateTableWithFloat) {
+    std::string query = "CREATE TABLE products (price FLOAT);";
+    auto ast = parse_query(query);
+
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "products");
+
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 1);
+
+    // First column: price FLOAT
+    EXPECT_EQ(createNode->columns[0]->name->name, "price");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::FLOAT);
+    EXPECT_EQ(createNode->columns[0]->size, 0);
+}
+
+TEST_F(ParserTest, InsertWithFloatLiteral) {
+    std::string query = "INSERT INTO products (price) VALUES (99.99);";
+    auto ast = parse_query(query);
+
+    InsertStatementNode* insertNode = asInsertStatement(ast);
+    ASSERT_NE(insertNode, nullptr);
+
+    // Verify table name
+    EXPECT_EQ(insertNode->tableName->name, "products");
+
+    // Verify column names
+    ASSERT_EQ(insertNode->columnNames.size(), 1);
+    EXPECT_EQ(insertNode->columnNames[0]->name, "price");
+
+    // Verify values
+    ASSERT_EQ(insertNode->values.size(), 1);
+    ASSERT_EQ(insertNode->values[0].size(), 1);
+
+    // Verify the float literal
+    ASSERT_EQ(insertNode->values[0].size(), 1);
+    auto* literal = insertNode->values[0][0].get();
+    ASSERT_NE(literal, nullptr);
+    EXPECT_EQ(std::get<double>(literal->value), 99.99);
+}
+
+TEST_F(ParserTest, SelectWithFloatInWhereClause) {
+    std::string query = "SELECT name FROM products WHERE price > 10.5;";
+    auto ast = parse_query(query);
+
+    SelectStatementNode* selectNode = asSelectStatement(ast);
+    ASSERT_NE(selectNode, nullptr);
+
+    // Verify WHERE clause exists
+    ASSERT_NE(selectNode->where_clause, nullptr);
+
+    // Verify WHERE clause is a binary operation
+    BinaryOperationNode* whereExpr = asBinaryOperation(selectNode->where_clause);
+    ASSERT_NE(whereExpr, nullptr);
+    EXPECT_EQ(whereExpr->op, ">");
+
+    // Verify left side is identifier "price"
+    IdentifierNode* leftSide = asIdentifier(whereExpr->left);
+    ASSERT_NE(leftSide, nullptr);
+    EXPECT_EQ(leftSide->name, "price");
+
+    // Verify right side is literal 10.5
+    LiteralNode* rightSide = asLiteral(whereExpr->right);
+    ASSERT_NE(rightSide, nullptr);
+    EXPECT_EQ(std::get<double>(rightSide->value), 10.5);
+}
+
+TEST_F(ParserTest, CreateTableWithDate) {
+    std::string query = "CREATE TABLE events (event_date DATE);";
+    auto ast = parse_query(query);
+
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "events");
+
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 1);
+
+    // First column: event_date DATE
+    EXPECT_EQ(createNode->columns[0]->name->name, "event_date");
+    EXPECT_EQ(createNode->columns[0]->type, TokenType::DATE);
+    EXPECT_EQ(createNode->columns[0]->size, 0);
+}
+
+TEST_F(ParserTest, CreateTableWithTimestamp) {
+    std::string query = "CREATE TABLE logs (log_time TIMESTAMP);";
+    auto ast = parse_query(query);
+
+    CreateTableStatementNode* createNode = asCreateTableStatement(ast);
+    ASSERT_NE(createNode, nullptr);
+
+    // Verify table name
+    EXPECT_EQ(createNode->table_name->name, "logs");
+
+    // Verify columns
+    ASSERT_EQ(createNode->columns.size(), 1);
+
+    // First column: log_time TIMESTAMP
+    EXPECT_EQ(createNode->columns[0]->size, 0);
+}
+
+TEST_F(ParserTest, InsertWithDateLiteral) {
+    std::string query = "INSERT INTO events (event_date) VALUES ('2025-10-31');";
+    auto ast = parse_query(query);
+
+    InsertStatementNode* insertNode = asInsertStatement(ast);
+    ASSERT_NE(insertNode, nullptr);
+
+    // Verify table name
+    EXPECT_EQ(insertNode->tableName->name, "events");
+
+    // Verify column names
+    ASSERT_EQ(insertNode->columnNames.size(), 1);
+    EXPECT_EQ(insertNode->columnNames[0]->name, "event_date");
+
+    // Verify values
+    ASSERT_EQ(insertNode->values.size(), 1);
+    ASSERT_EQ(insertNode->values[0].size(), 1);
+
+    // Verify the date literal
+    auto* literal = insertNode->values[0][0].get();
+    ASSERT_NE(literal, nullptr);
+    auto date = std::get<SQLDate>(literal->value);
+    EXPECT_EQ(date.year, 2025);
+    EXPECT_EQ(date.month, 10);
+    EXPECT_EQ(date.day, 31);
+}
+
+TEST_F(ParserTest, InsertWithTimestampLiteral) {
+    std::string query = "INSERT INTO logs (log_time) VALUES ('2025-10-31 12:30:00');";
+    auto ast = parse_query(query);
+
+    InsertStatementNode* insertNode = asInsertStatement(ast);
+    ASSERT_NE(insertNode, nullptr);
+
+    // Verify table name
+    EXPECT_EQ(insertNode->tableName->name, "logs");
+
+    // Verify column names
+    ASSERT_EQ(insertNode->columnNames.size(), 1);
+    EXPECT_EQ(insertNode->columnNames[0]->name, "log_time");
+
+    // Verify values
+    ASSERT_EQ(insertNode->values.size(), 1);
+    ASSERT_EQ(insertNode->values[0].size(), 1);
+
+    // Verify the timestamp literal
+    auto* literal = insertNode->values[0][0].get();
+    ASSERT_NE(literal, nullptr);
+    auto ts = std::get<SQLTimestamp>(literal->value);
+    EXPECT_EQ(ts.year, 2025);
+    EXPECT_EQ(ts.month, 10);
+    EXPECT_EQ(ts.day, 31);
+    EXPECT_EQ(ts.hour, 12);
+    EXPECT_EQ(ts.minute, 30);
+    EXPECT_EQ(ts.second, 0);
 }
 
 TEST_F(ParserTest, CreateTableWithMixedColumns) {

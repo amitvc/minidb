@@ -10,9 +10,22 @@
  */
 
 #include "parser.h"
+#include <sstream>
 
 
 namespace minidb {
+
+    SQLDate parse_date_literal(const std::string& s) {
+        SQLDate date;
+        std::sscanf(s.c_str(), "%d-%d-%d", &date.year, &date.month, &date.day);
+        return date;
+    }
+
+    SQLTimestamp parse_timestamp_literal(const std::string& s) {
+        SQLTimestamp ts;
+        std::sscanf(s.c_str(), "%d-%d-%d %d:%d:%d", &ts.year, &ts.month, &ts.day, &ts.hour, &ts.minute, &ts.second);
+        return ts;
+    }
 
     /**
      * @brief Main entry point for parsing the token stream
@@ -139,6 +152,15 @@ std::vector<std::unique_ptr<LiteralNode>> Parser::parse_value_list() {
 				case TokenType::INT_LITERAL:
 					values.push_back(std::make_unique<LiteralNode>(std::stoll(peek().text)));
 					break;
+				case TokenType::FLOAT_LITERAL:
+					values.push_back(std::make_unique<LiteralNode>(std::stod(peek().text)));
+					break;
+				case TokenType::DATE_LITERAL:
+					values.push_back(std::make_unique<LiteralNode>(parse_date_literal(peek().text)));
+					break;
+				case TokenType::TIMESTAMP_LITERAL:
+					values.push_back(std::make_unique<LiteralNode>(parse_timestamp_literal(peek().text)));
+					break;
 				case TokenType::STRING_LITERAL:
 					values.push_back(std::make_unique<LiteralNode>(peek().text));
 					break;
@@ -193,6 +215,15 @@ std::unique_ptr<ASTNode> Parser::parse_create_node() {
 			advance();
 		  } else if (match(TokenType::BOOL)) {
 			columnDef->type = TokenType::BOOL;
+			advance();
+		  } else if (match(TokenType::FLOAT)) {
+			columnDef->type = TokenType::FLOAT;
+			advance();
+		  } else if (match(TokenType::DATE)) {
+			columnDef->type = TokenType::DATE;
+			advance();
+		  } else if (match(TokenType::TIMESTAMP)) {
+			columnDef->type = TokenType::TIMESTAMP;
 			advance();
 		  } else if (match(TokenType::VARCHAR)) {
 			columnDef->type = TokenType::VARCHAR;
@@ -456,6 +487,19 @@ std::unique_ptr<ASTNode> Parser::parse_create_node() {
             advance();
             int64_t val = std::stoll(tokens[pos - 1].text);
             return std::make_unique<LiteralNode>(val);
+        }
+        if (match(TokenType::FLOAT_LITERAL)) {
+            advance();
+            double val = std::stod(tokens[pos - 1].text);
+            return std::make_unique<LiteralNode>(val);
+        }
+        if (match(TokenType::DATE_LITERAL)) {
+            advance();
+            return std::make_unique<LiteralNode>(parse_date_literal(tokens[pos - 1].text));
+        }
+        if (match(TokenType::TIMESTAMP_LITERAL)) {
+            advance();
+            return std::make_unique<LiteralNode>(parse_timestamp_literal(tokens[pos - 1].text));
         }
         if (match(TokenType::STRING_LITERAL)) {
             advance();

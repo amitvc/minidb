@@ -13,7 +13,8 @@
 
 #include "lexer.h"
 #include "token_type_utils.h"
-#include "spdlog/spdlog.h"
+#include "utils.h"
+#include <regex>
 namespace minidb {
 
     /**
@@ -127,15 +128,6 @@ namespace minidb {
         return {type, value};
     }
 
-    /**
-     * @brief Parses string literals enclosed in single quotes
-     * 
-     * Advances past the opening quote, collects characters until the closing
-     * quote is found, and returns a STRING_LITERAL token. Currently does not
-     * handle escape sequences.
-     * 
-     * @return Token of type STRING_LITERAL containing the string content
-     */
     Token Lexer::make_string() {
         std::string value;
         advance();
@@ -143,6 +135,11 @@ namespace minidb {
             value += advance();
         }
 		advance(); // skip the closing '
+        if (is_date_literal(value)) {
+            return {TokenType::DATE_LITERAL, value};
+        } else if (is_timestamp_literal(value)) {
+            return {TokenType::TIMESTAMP_LITERAL, value};
+        }
         return {TokenType::STRING_LITERAL, value};
     }
 
@@ -153,14 +150,27 @@ namespace minidb {
      * Currently only supports positive integers - negative numbers are
      * handled as a unary minus operator followed by a positive integer.
      * 
-     * @return Token of type INT_LITERAL with the numeric string
+     * @return Token of type INT_LITERAL, FLOAT_LITERAL with the numeric string
      */
     Token Lexer::make_numbers() {
         std::string number;
+        bool is_float = false;
         while (!has_ended() && isdigit(peek())) {
             number += advance();
         }
-        return {TokenType::INT_LITERAL, number};
+
+        if (!has_ended() && peek() == '.') {
+            // Check if there is a digit after the dot
+            if (curr_pos + 1 < input_.size() && isdigit(input_[curr_pos + 1])) {
+                is_float = true;
+                number += advance(); // consume the dot
+                while (!has_ended() && isdigit(peek())) {
+                    number += advance();
+                }
+            }
+        }
+
+        return {is_float ? TokenType::FLOAT_LITERAL : TokenType::INT_LITERAL, number};
     }
 
     /**
@@ -232,8 +242,7 @@ namespace minidb {
      * 
      * When an unrecognized character is encountered, this method:
      * 1. Advances past the character
-     * 2. Logs the occurrence using spdlog
-     * 3. Returns an UNKNOWN token containing the character
+     * 2. Returns an UNKNOWN token containing the character
      * 
      * This allows parsing to continue despite errors.
      * 
@@ -244,8 +253,6 @@ namespace minidb {
         
         // Create UNKNOWN token with the unexpected character
         std::string error_value(1, unexpected_char);
-
-        spdlog::info("Unexpected character {} ", unexpected_char );
 
         return {TokenType::UNKNOWN, error_value};
     }

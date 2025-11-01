@@ -138,7 +138,58 @@ TEST_F(LexerTest, InsertStatement) {
             {TokenType::STRING_LITERAL, "Alice"},
             {TokenType::RPAREN, ")"},
             {TokenType::SEMICOLON, ";"},
-            {TokenType::EOF_TOKEN, ""}
+            {TokenType::EOF_FILE, ""}
     };
+    assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, FloatLiteral) {
+    std::string query = "SELECT 3.14 FROM products;";
+    Lexer lexer(query);
+    std::vector<Token> tokens = lexer.tokenize();
+
+    std::vector<Token> expected_tokens = {
+            {TokenType::SELECT, "SELECT"},
+            {TokenType::FLOAT_LITERAL, "3.14"},
+            {TokenType::FROM, "FROM"},
+            {TokenType::IDENTIFIER, "products"},
+            {TokenType::SEMICOLON, ";"},
+            {TokenType::EOF_FILE, ""}
+    };
+
+    assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, DateLiteral) {
+    std::string query = "SELECT '2025-10-31' FROM events;";
+    Lexer lexer(query);
+    std::vector<Token> tokens = lexer.tokenize();
+
+    std::vector<Token> expected_tokens = {
+            {TokenType::SELECT, "SELECT"},
+            {TokenType::DATE_LITERAL, "2025-10-31"},
+            {TokenType::FROM, "FROM"},
+            {TokenType::IDENTIFIER, "events"},
+            {TokenType::SEMICOLON, ";"},
+            {TokenType::EOF_FILE, ""}
+    };
+
+    assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, TimestampLiteral) {
+    std::string query = "SELECT '2025-10-31 12:30:00' FROM events;";
+    Lexer lexer(query);
+    std::vector<Token> tokens = lexer.tokenize();
+
+    std::vector<Token> expected_tokens = {
+            {TokenType::SELECT, "SELECT"},
+            {TokenType::TIMESTAMP_LITERAL, "2025-10-31 12:30:00"},
+            {TokenType::FROM, "FROM"},
+            {TokenType::IDENTIFIER, "events"},
+            {TokenType::SEMICOLON, ";"},
+            {TokenType::EOF_FILE, ""}
+    };
+
     assert_tokens_equal(tokens, expected_tokens);
 }

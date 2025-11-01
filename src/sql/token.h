@@ -11,6 +11,9 @@ namespace minidb {
         // Basic types
         IDENTIFIER,
         INT_LITERAL,
+        FLOAT_LITERAL,
+        DATE_LITERAL,
+        TIMESTAMP_LITERAL,
         STRING_LITERAL,
         BOOL_LITERAL,
         NULL_LITERAL,
@@ -18,7 +21,7 @@ namespace minidb {
         // Keywords
         SELECT, FROM, WHERE, INSERT, INTO, VALUES,
         UPDATE, SET, DELETE, CREATE, TABLE, INDEX, DROP,
-        INT, FLOAT, VARCHAR, BOOL, JOIN,
+        INT, FLOAT, VARCHAR, BOOL, DATE, TIMESTAMP, JOIN,
         ON, GROUP, BY, HAVING, ORDER, ASC, DESC,
         IF, EXISTS, PRIMARY, KEY,
 

@@ -70,8 +70,8 @@ class Bitmap {
    * @param data A pointer to the start of the bitmap data (e.g., BitmapPage::bitmap).
    * @param size_in_bits The total number of bits the bitmap can hold.
    */
-  explicit Bitmap(char* data, size_t size_in_bits)
-	  : data(reinterpret_cast<uint8_t*>(data)), size(size_in_bits) {}
+  explicit Bitmap(char *data, size_t size_in_bits)
+	  : data(reinterpret_cast<uint8_t *>(data)), size(size_in_bits) {}
 
   /**
    * @brief Checks if a specific bit is set to 1.
@@ -102,7 +102,10 @@ class Bitmap {
 	data[bit_index / 8] &= ~(1 << (bit_index % 8));
   }
 
+  size_t get_size_in_bits() {
+	return  size;
+  }
  private:
-  uint8_t* data;
+  uint8_t *data;
   size_t size;
 };
