@@ -27,6 +27,7 @@ namespace minidb {
 
         // Operators
         EQ, NE, GT, LT, GTE, LTE,
+	  	PLUS, MINUS,
         AND, OR, NOT,
         IS, TRUE, FALSE,
 

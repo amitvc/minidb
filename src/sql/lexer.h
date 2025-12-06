@@ -21,7 +21,7 @@ namespace minidb {
      * and punctuation.
      * 
      * @par Token Recognition:
-     * - Keywords: SELECT, FROM, WHERE, JOIN, etc.
+     * - Keywords: SELECT, FROM, WHERE, JOIN, etc. See token.h enum TokenType for list of keywords we currently support
      * - Identifiers: table names, column names, aliases
      * - Literals: integers, strings (single-quoted)
      * - Operators: =, !=, <, >, <=, >=
@@ -44,22 +44,24 @@ namespace minidb {
              * @brief Constructs a Lexer with the given SQL input string
              * @param input The SQL query string to tokenize
              */
-            explicit Lexer(std::string  input) : input_(std::move(input)), curr_pos(0) {}
+            explicit Lexer(std::string_view  input) : input_(input), curr_pos(0) {}
             
             /**
              * @brief Extracts and returns the next token from the input stream
              * @return The next Token in the input, or EOF_FILE token when input is exhausted
              * @throws std::runtime_error for unrecoverable parsing errors
              */
+			[[nodiscard]]
             Token next_token();
             
             /**
              * @brief Tokenizes the entire input string into a vector of tokens
              * @return Vector of all tokens including the final EOF_FILE token
              */
+			[[nodiscard]]
             std::vector<Token> tokenize();
         private:
-            std::string input_;         ///< The input SQL string being tokenized
+            std::string_view input_;         ///< The input SQL string being tokenized
             size_t curr_pos;           ///< Current position in the input string
             std::vector<Token> buffer_; ///< Token buffer (currently unused, reserved for future use)
             

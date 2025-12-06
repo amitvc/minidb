@@ -193,3 +193,130 @@ TEST_F(LexerTest, TimestampLiteral) {
 
     assert_tokens_equal(tokens, expected_tokens);
 }
+
+TEST_F(LexerTest, EmptyInput) {
+  std::string query = "";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, WhitespaceOnly) {
+  std::string query = "   \t\n  ";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, UnterminatedString) {
+  // This tests the fix we made for unterminated strings
+  std::string query = "SELECT 'dangling";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  // Expecting UNKNOWN token for the unterminated string
+  // Note: The value depends on your implementation, here assuming "'dangling"
+  ASSERT_FALSE(tokens.empty());
+  EXPECT_EQ(tokens[0].type, TokenType::SELECT);
+  EXPECT_EQ(tokens[1].type, TokenType::UNKNOWN);
+  EXPECT_EQ(tokens.back().type, TokenType::EOF_FILE);
+}
+
+TEST_F(LexerTest, UnknownCharacter) {
+  // '@' is not a valid character in our SQL dialect
+  std::string query = "SELECT @ FROM users;";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::SELECT, "SELECT"},
+	  {TokenType::UNKNOWN, "@"},
+	  {TokenType::FROM, "FROM"},
+	  {TokenType::IDENTIFIER, "users"},
+	  {TokenType::SEMICOLON, ";"},
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, ArithmeticOperators) {
+  std::string query = "SELECT -5, +10 FROM numbers;";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::SELECT, "SELECT"},
+	  {TokenType::MINUS, "-"},
+	  {TokenType::INT_LITERAL, "5"},
+	  {TokenType::COMMA, ","},
+	  {TokenType::PLUS, "+"},
+	  {TokenType::INT_LITERAL, "10"},
+	  {TokenType::FROM, "FROM"},
+	  {TokenType::IDENTIFIER, "numbers"},
+	  {TokenType::SEMICOLON, ";"},
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, CaseInsensitivity) {
+  std::string query = "SeLeCt * fRoM Users;";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::SELECT, "SeLeCt"},
+	  {TokenType::STAR, "*"},
+	  {TokenType::FROM, "fRoM"},
+	  {TokenType::IDENTIFIER, "Users"},
+	  {TokenType::SEMICOLON, ";"},
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, BooleanAndNullLiterals) {
+  std::string query = "SELECT TRUE, FALSE, NULL;";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::SELECT, "SELECT"},
+	  {TokenType::TRUE, "TRUE"},
+	  {TokenType::COMMA, ","},
+	  {TokenType::FALSE, "FALSE"},
+	  {TokenType::COMMA, ","},
+	  {TokenType::NULL_LITERAL, "NULL"},
+	  {TokenType::SEMICOLON, ";"},
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}
+
+TEST_F(LexerTest, ComplexOperators) {
+  std::string query = "WHERE a != b AND c <= d;";
+  Lexer lexer(query);
+  std::vector<Token> tokens = lexer.tokenize();
+
+  std::vector<Token> expected_tokens = {
+	  {TokenType::WHERE, "WHERE"},
+	  {TokenType::IDENTIFIER, "a"},
+	  {TokenType::NE, "!="},
+	  {TokenType::IDENTIFIER, "b"},
+	  {TokenType::AND, "AND"},
+	  {TokenType::IDENTIFIER, "c"},
+	  {TokenType::LTE, "<="},
+	  {TokenType::IDENTIFIER, "d"},
+	  {TokenType::SEMICOLON, ";"},
+	  {TokenType::EOF_FILE, ""}
+  };
+  assert_tokens_equal(tokens, expected_tokens);
+}

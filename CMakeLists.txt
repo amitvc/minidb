@@ -20,7 +20,6 @@ target_link_libraries(minidb_cli minidb)
 
 
 target_include_directories(minidb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_include_directories(minidb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/spdlog/include)
 
 
 # Documentation with Doxygen

@@ -60,6 +60,11 @@ namespace minidb {
                 case '!':
                     return make_operator();
 
+			  case '+':
+				return make_token(TokenType::PLUS, "+");
+			  case '-':
+				return make_token(TokenType::MINUS, "-");
+
             }
 
             if (isdigit(c)) {
@@ -134,7 +139,15 @@ namespace minidb {
         while (!has_ended() && peek() != '\'') {
             value += advance();
         }
-		advance(); // skip the closing '
+
+		// Check if we hit the end of the file without finding a closing quote
+		if (has_ended()) {
+		  // Return an UNKNOWN token or throw an error.
+		  // For now, let's return UNKNOWN so the parser can handle it or fail gracefully.
+		  return {TokenType::UNKNOWN, "'" + value};
+		}
+
+		advance(); // Consume the closing '
         if (is_date_literal(value)) {
             return {TokenType::DATE_LITERAL, value};
         } else if (is_timestamp_literal(value)) {
