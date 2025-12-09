@@ -30,7 +30,7 @@ namespace minidb {
         return "minidb> ";
     }
 
-    void MiniDBCli::ProcessCommand(const std::string& input) {
+    void MiniDBCli::ProcessCommand(const std::string_view input) {
         if (input.find("createtable") == 0) {
             std::cout << "[TODO] Handle CREATE TABLE\n";
         } else if (input.find("insert") == 0) {

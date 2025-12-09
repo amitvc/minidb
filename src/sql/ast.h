@@ -57,12 +57,12 @@ namespace minidb {
  * An expression is anything that can be evaluated to a value, such as a literal,
  * a column name, or a binary operation like 'price > 100'.
  */
-    class ExpressionNode : public ASTNode {
-    };
+  class ExpressionNode : public ASTNode {
+  };
 
 /**
  * @class LiteralNode
- * @brief Represents a literal value, like a number, string or a bool using std::variant for type safety.
+ * @brief Represents a literal value, like a number, string, bool, date ot timestamp using std::variant for type safety.
  */
     class LiteralNode : public ExpressionNode {
     public:
@@ -184,6 +184,32 @@ namespace minidb {
 	};
 
     /**
+     * @class DeleteStatementNode
+     * @brief Represents a DELETE statement.
+     */
+    class DeleteStatementNode final : public ASTNode {
+    public:
+        std::unique_ptr<IdentifierNode> table_name;
+        std::unique_ptr<ExpressionNode> where_clause; // Optional
+    };
+
+    /**
+     * @class UpdateStatementNode
+     * @brief Represents an UPDATE statement.
+     */
+    class UpdateStatementNode final : public ASTNode {
+    public:
+        struct UpdateSet {
+            std::unique_ptr<IdentifierNode> column;
+            std::unique_ptr<ExpressionNode> value;
+        };
+
+        std::unique_ptr<IdentifierNode> table_name;
+        std::vector<UpdateSet> updates;
+        std::unique_ptr<ExpressionNode> where_clause; // Optional
+    };
+
+    /**
      * @class CreateTableStatementNode
      * @brief Represents a full CREATE TABLE statement. This is a top-level AST node.
      *
@@ -205,5 +231,18 @@ namespace minidb {
         std::unique_ptr<IdentifierNode> table_name;
         std::vector<std::unique_ptr<IdentifierNode>> primary_key_columns; // Supports multi-column primary key.
     };
+
+    /**
+     * @class CreateIndexStatementNode
+     * @brief Represents a CREATE INDEX statement.
+     */
+    class CreateIndexStatementNode final : public ASTNode {
+    public:
+        std::unique_ptr<IdentifierNode> index_name;
+        std::unique_ptr<IdentifierNode> table_name;
+        std::vector<std::unique_ptr<IdentifierNode>> columns;
+    };
+
+
 
 } // namespace minidb

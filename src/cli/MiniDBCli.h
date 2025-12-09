@@ -4,6 +4,7 @@
 
 #pragma once
 #include <string>
+#include <string_view>
 
 namespace minidb {
     /**
@@ -41,7 +42,7 @@ namespace minidb {
          * @brief Processes a single SQL command from user input
          * @param input The raw SQL command string entered by the user
          */
-        void ProcessCommand(const std::string &input);
+        void ProcessCommand(const std::string_view input);
 
         /**
          * @brief Generates and returns the command prompt string

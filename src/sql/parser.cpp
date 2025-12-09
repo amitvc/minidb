@@ -47,10 +47,9 @@ namespace minidb {
             case TokenType::INSERT:
 			  	return parse_insert_node();
             case TokenType::DELETE:
-                //TODO implement parse_delete_node();
-                break;
+                return parse_delete_node();
             case TokenType::UPDATE:
-                //TODO implement parse_update_node();
+                return parse_update_node();
                 break;
             case TokenType::DROP:
                 return parse_drop_node();
@@ -61,6 +60,45 @@ namespace minidb {
         }
         return nullptr; // Should not reach here
 
+    }
+
+    /**
+     * @brief Parses a complete UPDATE statement.
+     * 
+     * Syntax:
+     * UPDATE table_name SET col1 = val1, col2 = val2 [WHERE condition]
+     */
+    std::unique_ptr<ASTNode> Parser::parse_update_node() {
+        auto rootNode = std::make_unique<UpdateStatementNode>();
+        ensure(TokenType::UPDATE, "Expected 'UPDATE' keyword");
+        
+        auto tableToken = ensure(TokenType::IDENTIFIER, "Expected table name");
+        rootNode->table_name = std::make_unique<IdentifierNode>(tableToken.text);
+
+        ensure(TokenType::SET, "Expected 'SET' keyword");
+
+        do {
+            if (match(TokenType::COMMA)) {
+                advance();
+            }
+
+            UpdateStatementNode::UpdateSet updateSet;
+            auto colToken = ensure(TokenType::IDENTIFIER, "Expected column name");
+            updateSet.column = std::make_unique<IdentifierNode>(colToken.text);
+
+            ensure(TokenType::EQ, "Expected '=' after column name");
+
+            updateSet.value = parse_logical_expression();
+            rootNode->updates.push_back(std::move(updateSet));
+
+        } while(match(TokenType::COMMA));
+
+        if (match(TokenType::WHERE)) {
+            advance();
+            rootNode->where_clause = parse_logical_expression();
+        }
+
+        return rootNode;
     }
 
     /**
@@ -113,7 +151,7 @@ namespace minidb {
 
 	std::unique_ptr<ASTNode> Parser::parse_insert_node() {
 	    auto rootNode = std::make_unique<InsertStatementNode>();
-	  	ensure(TokenType::INSERT,  "Expected 'CREATE' keyword.");
+	  	ensure(TokenType::INSERT,  "Expected 'INSERT' keyword.");
 	  	ensure(TokenType::INTO, "Expected INTO keyword ");
 	  	const Token& tableNameToken = ensure(TokenType::IDENTIFIER, "Expected Identifier for table name");
 	  	rootNode->tableName = std::make_unique<IdentifierNode>(tableNameToken.text);
@@ -271,7 +309,46 @@ std::unique_ptr<ASTNode> Parser::parse_create_node() {
 	}
 
     std::unique_ptr<ASTNode> Parser::parse_create_index_node() {
-        throw std::runtime_error("CREATE INDEX not yet implemented");
+        auto rootNode = std::make_unique<CreateIndexStatementNode>();
+        ensure(TokenType::INDEX, "Expected 'INDEX' keyword");
+        
+        auto indexToken = ensure(TokenType::IDENTIFIER, "Expected index name");
+        rootNode->index_name = std::make_unique<IdentifierNode>(indexToken.text);
+
+        ensure(TokenType::ON, "Expected 'ON' keyword");
+
+        auto tableToken = ensure(TokenType::IDENTIFIER, "Expected table name");
+        rootNode->table_name = std::make_unique<IdentifierNode>(tableToken.text);
+
+        ensure(TokenType::LPAREN, "Expected '(' before column list");
+        
+        rootNode->columns = parse_identifier_list();
+
+        ensure(TokenType::RPAREN, "Expected ')' after column list");
+
+        return rootNode;
+    }
+
+
+    /**
+     * @brief Parses a complete DELETE statement.
+     * Example: DELETE FROM table_name [WHERE condition]
+     */
+    std::unique_ptr<ASTNode> Parser::parse_delete_node() {
+        auto rootNode = std::make_unique<DeleteStatementNode>();
+        
+        ensure(TokenType::DELETE, "Expected 'DELETE' keyword");
+        ensure(TokenType::FROM, "Expected 'FROM' keyword");
+        
+        const auto& tableToken = ensure(TokenType::IDENTIFIER, "Expected table name");
+        rootNode->table_name = std::make_unique<IdentifierNode>(tableToken.text);
+
+        if (match(TokenType::WHERE)) {
+            advance();
+            rootNode->where_clause = parse_logical_expression();
+        }
+
+        return rootNode;
     }
 
 
@@ -458,9 +535,21 @@ std::unique_ptr<ASTNode> Parser::parse_create_node() {
      * @return ExpressionNode representing the complete parsed expression
      */
     std::unique_ptr<ExpressionNode> Parser::parse_logical_expression() {
+        auto left = parse_and_expression();
+
+        while (match(TokenType::OR)) {
+            advance();
+            std::string op = tokens[pos - 1].text;
+            auto right = parse_and_expression();
+            left = std::make_unique<BinaryOperationNode>(std::move(left), op, std::move(right));
+        }
+        return left;
+    }
+
+    std::unique_ptr<ExpressionNode> Parser::parse_and_expression() {
         auto left = parse_relational_expression();
 
-        while (match(TokenType::AND) || match(TokenType::OR)) {
+        while (match(TokenType::AND)) {
             advance();
             std::string op = tokens[pos - 1].text;
             auto right = parse_relational_expression();

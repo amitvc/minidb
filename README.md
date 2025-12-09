@@ -34,13 +34,20 @@ cd minidb
 ```
 
 - Configure with CMake:
-```
-TODO
+```bash
+mkdir -p cmake-build-debug
+cd cmake-build-debug
+cmake ..
 ```
 
 - Compile the code:
-```
-TODO
+```bash
+cmake --build .
 ```
 
-  
+## Running Tests
+To run the unit tests, navigate to the build directory and run `ctest`:
+```bash
+cd cmake-build-debug
+ctest
+```

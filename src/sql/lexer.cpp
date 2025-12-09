@@ -160,7 +160,7 @@ namespace minidb {
      * @brief Parses integer literal tokens
      * 
      * Collects consecutive digit characters to form an integer literal.
-     * Currently only supports positive integers - negative numbers are
+     * Currently only supports positive integers and floats - negative numbers are
      * handled as a unary minus operator followed by a positive integer.
      * 
      * @return Token of type INT_LITERAL, FLOAT_LITERAL with the numeric string

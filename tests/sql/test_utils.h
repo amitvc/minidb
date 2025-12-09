@@ -5,6 +5,7 @@
 #pragma once
 
 #include "sql/token.h"
+#include <gtest/gtest.h>
 using namespace minidb;
 
 inline void assert_tokens_equal(const std::vector<Token>& actual, const std::vector<Token>& expected) {

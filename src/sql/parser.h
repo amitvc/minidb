@@ -129,6 +129,7 @@ namespace minidb {
              * @return ExpressionNode representing the parsed expression
              */
             std::unique_ptr<ExpressionNode> parse_logical_expression();
+            std::unique_ptr<ExpressionNode> parse_and_expression();
             std::unique_ptr<ExpressionNode> parse_value_or_identifier();
             std::unique_ptr<ExpressionNode> parse_relational_expression();
             std::vector<std::unique_ptr<ExpressionNode>> parse_expression_list();
@@ -140,7 +141,7 @@ namespace minidb {
             std::vector<std::unique_ptr<LiteralNode>> parse_value_list();
 
             // Future statement parsers (not yet implemented)
-            std::unique_ptr<ASTNode> parse_insert_node();   ///< TODO: Parse INSERT statements
+            std::unique_ptr<ASTNode> parse_insert_node();
             std::unique_ptr<ASTNode> parse_delete_node();   ///< TODO: Parse DELETE statements
             std::unique_ptr<ASTNode> parse_update_node();   ///< TODO: Parse UPDATE statements
             std::unique_ptr<ASTNode> parse_create_node();

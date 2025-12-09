@@ -31,6 +31,18 @@ protected:
 	InsertStatementNode* asInsertStatement(std::unique_ptr<ASTNode> &node) {
 	  return dynamic_cast<InsertStatementNode*>(node.get());
 	}
+
+    DeleteStatementNode* asDeleteStatement(std::unique_ptr<ASTNode> &node) {
+        return dynamic_cast<DeleteStatementNode*>(node.get());
+    }
+
+    UpdateStatementNode* asUpdateStatement(std::unique_ptr<ASTNode> &node) {
+        return dynamic_cast<UpdateStatementNode*>(node.get());
+    }
+
+    CreateIndexStatementNode* asCreateIndexStatement(std::unique_ptr<ASTNode> &node) {
+        return dynamic_cast<CreateIndexStatementNode*>(node.get());
+    }
     
     // Helper method to cast ExpressionNode to specific types
     IdentifierNode* asIdentifier(std::unique_ptr<ExpressionNode>& expr) {
@@ -59,6 +71,7 @@ protected:
 
 TEST_F(ParserTest, SelectAll) {
     std::string query = "SELECT * FROM users;";
+  	std::cout << "Breakpoint here!" << std::endl;
     auto ast = parse_query(query);
     
     // Verify it's a SelectStatementNode
@@ -1323,4 +1336,100 @@ TEST_F(ParserTest, InsertTrailingCommaInMultipleRows) {
   EXPECT_THROW({
     parse_query(query);
   }, std::runtime_error);
+}
+TEST_F(ParserTest, DeleteAllRows) {
+    std::string query = "DELETE FROM users;";
+    auto ast = parse_query(query);
+    
+    DeleteStatementNode* deleteNode = asDeleteStatement(ast);
+    ASSERT_NE(deleteNode, nullptr);
+    
+    EXPECT_EQ(deleteNode->table_name->name, "users");
+    EXPECT_EQ(deleteNode->where_clause, nullptr);
+}
+
+TEST_F(ParserTest, DeleteWithWhereClause) {
+    std::string query = "DELETE FROM users WHERE id = 5;";
+    auto ast = parse_query(query);
+    
+    DeleteStatementNode* deleteNode = asDeleteStatement(ast);
+    ASSERT_NE(deleteNode, nullptr);
+    
+    EXPECT_EQ(deleteNode->table_name->name, "users");
+    
+    ASSERT_NE(deleteNode->where_clause, nullptr);
+    BinaryOperationNode* whereExpr = asBinaryOperation(deleteNode->where_clause);
+    ASSERT_NE(whereExpr, nullptr);
+    EXPECT_EQ(whereExpr->op, "=");
+    
+    IdentifierNode* left = asIdentifier(whereExpr->left);
+    ASSERT_NE(left, nullptr);
+    EXPECT_EQ(left->name, "id");
+    
+    LiteralNode* right = asLiteral(whereExpr->right);
+    ASSERT_NE(right, nullptr);
+    EXPECT_EQ(std::get<int64_t>(right->value), 5);
+}
+
+TEST_F(ParserTest, SimpleUpdate) {
+    std::string query = "UPDATE users SET name = 'John', age = 30 WHERE id = 1;";
+    auto ast = parse_query(query);
+
+    auto updateStmt = asUpdateStatement(ast);
+    ASSERT_NE(updateStmt, nullptr);
+    EXPECT_EQ(updateStmt->table_name->name, "users");
+    
+    ASSERT_EQ(updateStmt->updates.size(), 2);
+    EXPECT_EQ(updateStmt->updates[0].column->name, "name");
+    auto nameValue = asLiteral(updateStmt->updates[0].value);
+    EXPECT_EQ(std::get<std::string>(nameValue->value), "John");
+
+    EXPECT_EQ(updateStmt->updates[1].column->name, "age");
+    auto ageValue = asLiteral(updateStmt->updates[1].value);
+    EXPECT_EQ(std::get<int64_t>(ageValue->value), 30);
+
+    ASSERT_NE(updateStmt->where_clause, nullptr);
+    auto whereClause = asBinaryOperation(updateStmt->where_clause);
+    EXPECT_EQ(whereClause->op, "=");
+}
+
+TEST_F(ParserTest, UpdateWithoutWhere) {
+    std::string query = "UPDATE products SET price = 100;";
+    auto ast = parse_query(query);
+
+    auto updateStmt = asUpdateStatement(ast);
+    ASSERT_NE(updateStmt, nullptr);
+    EXPECT_EQ(updateStmt->table_name->name, "products");
+    
+    ASSERT_EQ(updateStmt->updates.size(), 1);
+    EXPECT_EQ(updateStmt->updates[0].column->name, "price");
+    
+    EXPECT_EQ(updateStmt->where_clause, nullptr);
+}
+
+TEST_F(ParserTest, CreateIndexSimple) {
+    std::string query = "CREATE INDEX idx_name ON users (name);";
+    auto ast = parse_query(query);
+
+    auto indexStmt = asCreateIndexStatement(ast);
+    ASSERT_NE(indexStmt, nullptr);
+    EXPECT_EQ(indexStmt->index_name->name, "idx_name");
+    EXPECT_EQ(indexStmt->table_name->name, "users");
+    
+    ASSERT_EQ(indexStmt->columns.size(), 1);
+    EXPECT_EQ(indexStmt->columns[0]->name, "name");
+}
+
+TEST_F(ParserTest, CreateIndexComposite) {
+    std::string query = "CREATE INDEX idx_composite ON users (name, age);";
+    auto ast = parse_query(query);
+
+    auto indexStmt = asCreateIndexStatement(ast);
+    ASSERT_NE(indexStmt, nullptr);
+    EXPECT_EQ(indexStmt->index_name->name, "idx_composite");
+    EXPECT_EQ(indexStmt->table_name->name, "users");
+    
+    ASSERT_EQ(indexStmt->columns.size(), 2);
+    EXPECT_EQ(indexStmt->columns[0]->name, "name");
+    EXPECT_EQ(indexStmt->columns[1]->name, "age");
 }

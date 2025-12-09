@@ -63,8 +63,7 @@ namespace minidb {
         private:
             std::string_view input_;         ///< The input SQL string being tokenized
             size_t curr_pos;           ///< Current position in the input string
-            std::vector<Token> buffer_; ///< Token buffer (currently unused, reserved for future use)
-            
+
             /**
              * @brief Looks at the current character without consuming it
              * @return Current character or '\0' if at end of input
