@@ -6,6 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 # Set debug flags when in Debug mode
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
 
+# Add spdlog
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.12.0
+)
+FetchContent_MakeAvailable(spdlog)
+
 file(GLOB_RECURSE DB_SOURCES "src/*.cpp")
 file(GLOB_RECURSE DB_HEADERS "src/*.h")
 
@@ -13,6 +22,7 @@ file(GLOB_RECURSE DB_HEADERS "src/*.h")
 list(REMOVE_ITEM DB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
 add_library(minidb ${DB_SOURCES} ${DB_HEADERS})
+target_link_libraries(minidb spdlog::spdlog)
 
 # Create executable
 add_executable(minidb_cli src/main.cpp)

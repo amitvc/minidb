@@ -19,7 +19,7 @@ file(GLOB_RECURSE DB_HEADERS "*.h")
 add_executable(minidb_test ${DB_SOURCES} ${DB_HEADERS})
 
 target_link_libraries(minidb_test PRIVATE minidb
-        gtest_main
+        gtest
 )
 
 target_include_directories(minidb_test PRIVATE ${CMAKE_SOURCE_DIR}/src)

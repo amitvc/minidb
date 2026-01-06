@@ -6,8 +6,10 @@
 #include "storage/config.h"
 #include <iostream>
 #include <cassert>
+#include <utility>
 
-DiskManager::DiskManager(const std::string& db_file) : file_name_(db_file) {
+namespace minidb {
+DiskManager::DiskManager(std::string db_file) : file_name_(std::move(db_file)) {
   assert(!file_name_.empty() && "Database file path cannot be empty");
 
   // Open the file with flags for reading, writing, and binary mode.
@@ -18,7 +20,6 @@ DiskManager::DiskManager(const std::string& db_file) : file_name_(db_file) {
 
 	// The `trunc` flag creates file if it does not exist.
 	db_file_.open(file_name_, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-
 	if (!db_file_.is_open()) {
 	  // We can't proceed without db file.
 	  throw std::runtime_error("FATAL: Failed to create or open database file: " + file_name_);
@@ -28,21 +29,19 @@ DiskManager::DiskManager(const std::string& db_file) : file_name_(db_file) {
 
 DiskManager::~DiskManager() {
   if (db_file_.is_open()) {
-	db_file_.flush();
+	db_file_.flush(); // flush to disk
 	db_file_.close(); // close the db file
   }
 }
 
-IOResult DiskManager::write_page(page_id_t page_id, const char* page_data) {
+IOResult DiskManager::write_page(page_id_t page_id, const char *page_data) {
   if (!db_file_.is_open()) {
-	std::cerr << "Cannot write page. Database file is not open." << std::endl;
 	return IOResult::FILE_NOT_OPEN;
   }
 
   std::streampos offset = static_cast<std::streampos>(page_id) * PAGE_SIZE;
   db_file_.seekp(offset, std::ios::beg);
   if (db_file_.fail()) {
-	std::cerr << "Error seeking to page " << page_id << " for writing." << std::endl;
 	db_file_.clear(); // Clear error flags to allow further operations
 	return IOResult::SEEK_ERROR;
   }
@@ -50,7 +49,6 @@ IOResult DiskManager::write_page(page_id_t page_id, const char* page_data) {
   // Write exactly PAGE_SIZE bytes from the buffer to the file.
   db_file_.write(page_data, PAGE_SIZE);
   if (db_file_.fail()) {
-	std::cerr << "Error writing to page " << page_id << "." << std::endl;
 	db_file_.clear();
 	return IOResult::WRITE_ERROR;
   }
@@ -61,9 +59,8 @@ IOResult DiskManager::write_page(page_id_t page_id, const char* page_data) {
   return IOResult::SUCCESS;
 }
 
-IOResult DiskManager::read_page(page_id_t page_id, char* page_data) {
+IOResult DiskManager::read_page(minidb::page_id_t page_id, char *page_data) {
   if (!db_file_.is_open()) {
-	std::cerr << "Cannot read page. Database file is not open." << std::endl;
 	return IOResult::FILE_NOT_OPEN;
   }
 
@@ -74,7 +71,6 @@ IOResult DiskManager::read_page(page_id_t page_id, char* page_data) {
   db_file_.seekg(offset, std::ios::beg);
   if (db_file_.fail()) {
 	// This can happen if we try to read a page that doesn't exist yet.
-	std::cerr << "Error seeking to page " << page_id << " for reading. Page may not exist." << std::endl;
 	db_file_.clear(); // Clear error flags
 	return IOResult::SEEK_ERROR;
   }
@@ -84,13 +80,10 @@ IOResult DiskManager::read_page(page_id_t page_id, char* page_data) {
   if (db_file_.fail()) {
 	// `gcount()` returns the number of bytes actually read.
 	// This check is useful for diagnosing reads past the end of the file.
-	std::cerr << "Error reading from page " << page_id << ". Read " << db_file_.gcount() << " bytes." << std::endl;
 	db_file_.clear();
 	return IOResult::READ_ERROR;
   }
-
   return IOResult::SUCCESS;
 }
-
-
+}
 
