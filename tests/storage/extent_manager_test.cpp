@@ -66,6 +66,7 @@ TEST_F(ExtentManagerTest, TestInitialization) {
   EXPECT_EQ(iam_page3->page_type, PageType::IAM);
 }
 
+// Verify ExtentManager allocates pages correctly.
 TEST_F(ExtentManagerTest, TestAllocation) {
   auto disk_manager = std::make_unique<DiskManager>(test_db_file);
   auto extent_manager = std::make_unique<ExtentManager>(*disk_manager);
@@ -146,81 +147,51 @@ TEST_F(ExtentManagerTest, TestGAMPageExpansion) {
   EXPECT_EQ(header->total_pages, EXTENT_SIZE);
 
   // The new GAM page should be at Page 4.
-
   disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-
   EXPECT_EQ(gam_page->next_bitmap_page_id, 4); // Should point to Page 4
 
-
-
   // Validate the new GAM page itself
-
   char new_gam_buffer[PAGE_SIZE];
-
   disk_manager->read_page(4, new_gam_buffer);
 
   auto *new_gam_page = reinterpret_cast<BitmapPage *>(new_gam_buffer);
 
   EXPECT_EQ(new_gam_page->page_type, PageType::GAM);
-
-
-
   // Validate allocation return value
-
   // We expect a valid page_id > 0.
 
-  EXPECT_GT(new_extent_page_id, 200000);
+  // 4088 * 8 * 8 [ total number of bytes * bits per byte * EXTENT_SIZE]
+  // 4088 => 4096 - 4 - 4. See bitmapPage for details.
+  EXPECT_EQ(new_extent_page_id, 4088 * 8 * 8);
 
 }
 
 TEST_F(ExtentManagerTest, TestDeallocation) {
-
   auto disk_manager = std::make_unique<DiskManager>(test_db_file);
-
   auto extent_manager = std::make_unique<ExtentManager>(*disk_manager);
 
-
-
   // Allocate two extents
-
   page_id_t extent1_start = extent_manager->allocate_extent(); // 8
-
   page_id_t extent2_start = extent_manager->allocate_extent(); // 16
-
   EXPECT_EQ(extent1_start, 8);
-
   EXPECT_EQ(extent2_start, 16);
 
-
-
   // Deallocate the first one
-
   extent_manager->deallocate_extent(extent1_start);
 
-
-
   // Verify in GAM that bit is cleared
-
   char gam_buffer[PAGE_SIZE];
-
   disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-
   auto *gam_page = reinterpret_cast<BitmapPage *>(gam_buffer);
 
   Bitmap gam_bitmap(gam_page->bitmap, MAX_BITS);
 
   EXPECT_FALSE(gam_bitmap.is_set(1)); // Extent 1 should be free
-
   EXPECT_TRUE(gam_bitmap.is_set(2));  // Extent 2 should still be allocated
 
-
-
   // Now, allocate again - should reuse the deallocated one
-
   page_id_t reused_extent_start = extent_manager->allocate_extent();
-
   EXPECT_EQ(reused_extent_start, extent1_start);
-
 }
 
 TEST_F(ExtentManagerTest, TestGAMPageExpansionWhenExtent0IsFull) {
