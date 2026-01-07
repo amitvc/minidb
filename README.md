@@ -1,6 +1,6 @@
-## MiniDB (WORK IN PROGRESS)
-Welcome to the MiniDB SQL Database project! Once completely built it will be a fully functional, disk-based relational database management system (RDBMS) written from scratch in modern C++.
-Designed as a comprehensive educational initiative, this project aims to demystify the "black box" of database internals. Rather than relying on existing libraries for core functionality, MiniDB implements the entire database stack from first principles. It serves as a practical exploration of system design, low-level memory management, and algorithm implementation. My goal is not to take any external dependency for the core implementation.
+## LettyDB (WORK IN PROGRESS)
+Welcome to the LettyDB SQL Database project! Once completely built it will be a fully functional, disk-based relational database management system (RDBMS) written from scratch in modern C++.
+Designed as a comprehensive educational initiative, this project aims to demystify the "black box" of database internals. Rather than relying on existing libraries for core functionality, LettyDB implements the entire database stack from first principles. It serves as a practical exploration of system design, low-level memory management, and algorithm implementation. My goal is not to take any external dependency for the core implementation.
 
 ## Features
 
@@ -30,8 +30,8 @@ Designed as a comprehensive educational initiative, this project aims to demysti
 ## Building the Project
 - Clone the repository:
 ```
-git clone https://github.com/amitvc/minidb.git
-cd minidb
+git clone https://github.com/amitvc/lettydb.git
+cd lettydb
 ```
 
 - Configure with CMake:
