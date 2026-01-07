@@ -10,7 +10,7 @@
 #include "storage/disk_manager.h"
 #include "storage/storage_def.h"
 
-namespace minidb {
+namespace letty {
 
 class ExtentManagerTest : public ::testing::Test {
  protected:
@@ -47,8 +47,7 @@ TEST_F(ExtentManagerTest, TestInitialization) {
   // Check if GAM page is initialized
   char gam_buffer[PAGE_SIZE];
   disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-  auto *gam_page = reinterpret_cast<BitmapPage *>(gam_buffer);
-  EXPECT_EQ(gam_page->page_type, PageType::GAM);
+  auto *gam_page = reinterpret_cast<GAMPage *>(gam_buffer);
 
   // Verify extent 0 is allocated (it holds Header, GAM, IAM)
   Bitmap gam_bitmap(gam_page->bitmap, (PAGE_SIZE - 8) * 8);
@@ -56,14 +55,12 @@ TEST_F(ExtentManagerTest, TestInitialization) {
 
   char iam_buffer[PAGE_SIZE] = {0};
   disk_manager->read_page(SYS_TABLES_IAM_PAGE_ID, iam_buffer);
-  auto *iam_page2 = reinterpret_cast<BitmapPage *>(iam_buffer);
-  EXPECT_EQ(iam_page2->page_type, PageType::IAM);
+  auto *iam_page2 = reinterpret_cast<GAMPage *>(iam_buffer);
 
   memset(iam_buffer, 0, PAGE_SIZE);
 
   disk_manager->read_page(SYS_COLUMNS_IAM_PAGE_ID, iam_buffer);
-  auto *iam_page3 = reinterpret_cast<BitmapPage *>(iam_buffer);
-  EXPECT_EQ(iam_page3->page_type, PageType::IAM);
+  auto *iam_page3 = reinterpret_cast<GAMPage *>(iam_buffer);
 }
 
 // Verify ExtentManager allocates pages correctly.
@@ -82,7 +79,7 @@ TEST_F(ExtentManagerTest, TestAllocation) {
   // Verify in GAM
   char gam_buffer[PAGE_SIZE];
   disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-  auto *gam_page = reinterpret_cast<BitmapPage *>(gam_buffer);
+  auto *gam_page = reinterpret_cast<GAMPage *>(gam_buffer);
   Bitmap gam_bitmap(gam_page->bitmap, (PAGE_SIZE - 8) * 8);
   //bit 1 and 2 is set to 1 to indicate extents 1 and 2 are allocated.
   EXPECT_TRUE(gam_bitmap.is_set(1));
@@ -111,7 +108,7 @@ TEST_F(ExtentManagerTest, TestPersistence) {
 	// Check that extent 1 is still allocated
 	char gam_buffer[PAGE_SIZE];
 	disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-	auto *gam_page = reinterpret_cast<BitmapPage *>(gam_buffer);
+	auto *gam_page = reinterpret_cast<GAMPage *>(gam_buffer);
 	Bitmap gam_bitmap(gam_page->bitmap, (PAGE_SIZE - 8) * 8);
 	EXPECT_TRUE(gam_bitmap.is_set(1));
 	EXPECT_TRUE(gam_bitmap.is_set(2));
@@ -125,7 +122,7 @@ TEST_F(ExtentManagerTest, TestGAMPageExpansion) {
   //  Manually fill the first GAM page
   char gam_buffer[PAGE_SIZE];
   disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-  auto *gam_page = reinterpret_cast<BitmapPage *>(gam_buffer);
+  auto *gam_page = reinterpret_cast<GAMPage *>(gam_buffer);
 
   // Fill all bits
   std::memset(gam_page->bitmap, 0xFF, sizeof(gam_page->bitmap));
@@ -154,15 +151,14 @@ TEST_F(ExtentManagerTest, TestGAMPageExpansion) {
   char new_gam_buffer[PAGE_SIZE];
   disk_manager->read_page(4, new_gam_buffer);
 
-  auto *new_gam_page = reinterpret_cast<BitmapPage *>(new_gam_buffer);
+  auto *new_gam_page = reinterpret_cast<GAMPage *>(new_gam_buffer);
 
-  EXPECT_EQ(new_gam_page->page_type, PageType::GAM);
   // Validate allocation return value
   // We expect a valid page_id > 0.
 
   // 4088 * 8 * 8 [ total number of bytes * bits per byte * EXTENT_SIZE]
-  // 4088 => 4096 - 4 - 4. See bitmapPage for details.
-  EXPECT_EQ(new_extent_page_id, 4088 * 8 * 8);
+  // 4088 => 4096  - 4. See bitmapPage for details.
+  EXPECT_EQ(new_extent_page_id, 4092 * 8 * 8);
 
 }
 
@@ -182,7 +178,7 @@ TEST_F(ExtentManagerTest, TestDeallocation) {
   // Verify in GAM that bit is cleared
   char gam_buffer[PAGE_SIZE];
   disk_manager->read_page(FIRST_GAM_PAGE_ID, gam_buffer);
-  auto *gam_page = reinterpret_cast<BitmapPage *>(gam_buffer);
+  auto *gam_page = reinterpret_cast<GAMPage *>(gam_buffer);
 
   Bitmap gam_bitmap(gam_page->bitmap, MAX_BITS);
 
@@ -216,8 +212,7 @@ TEST_F(ExtentManagerTest, TestGAMPageExpansionWhenExtent0IsFull) {
 
 	// Read or Init
 	std::memset(buffer, 0, PAGE_SIZE);
-	auto *page = reinterpret_cast<BitmapPage *>(buffer);
-	page->page_type = PageType::GAM;
+	auto *page = reinterpret_cast<GAMPage *>(buffer);
 	page->next_bitmap_page_id = next;
 
 	// Fill bitmap
@@ -246,14 +241,13 @@ TEST_F(ExtentManagerTest, TestGAMPageExpansionWhenExtent0IsFull) {
   char new_gam_buffer[PAGE_SIZE];
   IOResult res = disk_manager->read_page(8, new_gam_buffer);
   EXPECT_EQ(res, IOResult::SUCCESS);
-  auto *new_gam = reinterpret_cast<BitmapPage *>(new_gam_buffer);
-  EXPECT_EQ(new_gam->page_type, PageType::GAM);
+  auto *new_gam = reinterpret_cast<GAMPage *>(new_gam_buffer);
   EXPECT_EQ(new_gam->next_bitmap_page_id, INVALID_PAGE_ID);
 
   // Verify Link from Page 7
   char page7_buffer[PAGE_SIZE];
   disk_manager->read_page(7, page7_buffer);
-  auto *page7 = reinterpret_cast<BitmapPage *>(page7_buffer);
+  auto *page7 = reinterpret_cast<GAMPage *>(page7_buffer);
   EXPECT_EQ(page7->next_bitmap_page_id, 8);
 
   // Return ID should be valid and huge

@@ -8,7 +8,7 @@
 #include <cassert>
 #include <utility>
 
-namespace minidb {
+namespace letty {
 DiskManager::DiskManager(std::string db_file) : file_name_(std::move(db_file)) {
   assert(!file_name_.empty() && "Database file path cannot be empty");
 
@@ -59,7 +59,7 @@ IOResult DiskManager::write_page(page_id_t page_id, const char *page_data) {
   return IOResult::SUCCESS;
 }
 
-IOResult DiskManager::read_page(minidb::page_id_t page_id, char *page_data) {
+IOResult DiskManager::read_page(letty::page_id_t page_id, char *page_data) {
   if (!db_file_.is_open()) {
 	return IOResult::FILE_NOT_OPEN;
   }

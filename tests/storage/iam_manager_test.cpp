@@ -8,7 +8,7 @@
 #include "storage/disk_manager.h"
 #include "storage/extent_manager.h"
 
-namespace minidb {
+namespace letty {
 
 class IamManagerTest : public ::testing::Test {
  protected:
@@ -44,9 +44,8 @@ TEST_F(IamManagerTest, TestCreateChain) {
   // Read back to verify it's an IAM page
   char buffer[PAGE_SIZE];
   disk_manager->read_page(iam_page_id, buffer);
-  auto page = reinterpret_cast<BitmapPage*>(buffer);
+  auto page = reinterpret_cast<SparseIamPage*>(buffer);
   
-  EXPECT_EQ(page->page_type, PageType::IAM);
   EXPECT_EQ(page->next_bitmap_page_id, INVALID_PAGE_ID);
 }
 
@@ -65,10 +64,10 @@ TEST_F(IamManagerTest, TestAllocation) {
   // 3. Verify in IAM page
   char buffer[PAGE_SIZE];
   disk_manager->read_page(head_node, buffer);
-  auto page = reinterpret_cast<BitmapPage*>(buffer);
+  auto page = reinterpret_cast<SparseIamPage*>(buffer);
   
   // Extent 2 corresponds to index 2 in bitmap
-  Bitmap bitmap(page->bitmap, MAX_BITS);
+  Bitmap bitmap(page->bitmap, SPARSE_MAX_BITS);
   EXPECT_TRUE(bitmap.is_set(2));
   
   // Extent 0 and 1 should NOT be set in THIS IAM page technically.
@@ -80,4 +79,4 @@ TEST_F(IamManagerTest, TestAllocation) {
   EXPECT_FALSE(bitmap.is_set(1));
 }
 
-} // namespace minidb
+} // namespace letty

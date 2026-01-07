@@ -15,7 +15,7 @@
 #include "token_type_utils.h"
 #include "utils.h"
 #include <regex>
-namespace minidb {
+namespace letty {
 
     /**
      * @brief Main tokenization method that extracts the next token from input

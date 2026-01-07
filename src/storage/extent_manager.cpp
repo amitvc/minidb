@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace minidb {
+namespace letty {
 
 page_id_t ExtentManager::allocate_extent() {
   LOG_STORAGE_DEBUG("Starting extent allocation");
@@ -20,12 +20,12 @@ page_id_t ExtentManager::allocate_extent() {
   LOG_STORAGE_DEBUG("Starting search from GAM page {} at index {}", current_gam_page_id, gam_page_index);
 
   while (true) {
-    // 1. Read the GAM page (Use Cache if possible)
-    BitmapPage* gam_page;
+    // 1. Read the GAM page (Use Cache if possible) - All GAM pages use GAMPage structure
+    GAMPage* gam_page;
     if (current_gam_page_id == cached_gam_page_id_) {
         // Cache Hit!
         LOG_STORAGE_DEBUG("GAM cache hit for page {}", current_gam_page_id);
-        gam_page = reinterpret_cast<BitmapPage*>(gam_page_cache_);
+        gam_page = reinterpret_cast<GAMPage*>(gam_page_cache_);
     } else {
         // Cache Miss - Read from disk and update cache
         LOG_STORAGE_DEBUG("GAM cache miss for page {}, reading from disk", current_gam_page_id);
@@ -34,7 +34,7 @@ page_id_t ExtentManager::allocate_extent() {
             return INVALID_PAGE_ID;
         }
         cached_gam_page_id_ = current_gam_page_id;
-        gam_page = reinterpret_cast<BitmapPage*>(gam_page_cache_);
+        gam_page = reinterpret_cast<GAMPage*>(gam_page_cache_);
     }
 
     Bitmap bitmap(gam_page->bitmap, MAX_BITS);
@@ -58,7 +58,7 @@ page_id_t ExtentManager::allocate_extent() {
          *    - Each bit represents one EXTENT.
          *    - If PAGE_SIZE=4096, a GAM has ~32,704 bits.
          *    - So one GAM page covers ~32,704 extents.
-         *    - 8 bits are reserved for page type and next page id. See the BitmapPage struct in storage_def.h
+         *    - 8 bits are reserved for page type and next page id. See the GAMPage struct in storage_def.h
          *
          * 3. EXTENT_SIZE: How many pages are in one extent? (Defined as 8)
          *
@@ -139,8 +139,7 @@ page_id_t ExtentManager::allocate_extent() {
     // We construct it directly in a temp buffer, or we can use the cache if we are careful.
     // Let's use a temp buffer to avoid clobbering the current one before we link it.
     char new_gam_buffer[PAGE_SIZE] = {0};
-    auto new_gam_page = new(new_gam_buffer) BitmapPage();
-    new_gam_page->page_type = PageType::GAM;
+    auto new_gam_page = new(new_gam_buffer) GAMPage();
     new_gam_page->next_bitmap_page_id = INVALID_PAGE_ID;
 
     if (!is_packed) {
@@ -178,7 +177,7 @@ void ExtentManager::deallocate_extent(page_id_t start_page_id) {
         if (disk_manager_.read_page(current_gam_page_id, buffer) != IOResult::SUCCESS) {
             return; // Should not happen in a consistent DB
         }
-        auto gam_page = reinterpret_cast<BitmapPage *>(buffer);
+        auto gam_page = reinterpret_cast<GAMPage *>(buffer);
         if (gam_page->next_bitmap_page_id == INVALID_PAGE_ID) {
             return; // DB inconsistency
         }
@@ -199,7 +198,7 @@ void ExtentManager::deallocate_extent(page_id_t start_page_id) {
         }
     }
 
-    auto gam_page = reinterpret_cast<BitmapPage *>(target_buffer);
+    auto gam_page = reinterpret_cast<GAMPage *>(target_buffer);
     Bitmap bitmap(gam_page->bitmap, bits_per_gam);
     bitmap.clear(bit_in_gam);
 
@@ -232,19 +231,18 @@ void ExtentManager::initialize_new_db() {
   header->total_pages = EXTENT_SIZE;
   header->gam_page_id = FIRST_GAM_PAGE_ID;
 
-  // 2. Prepare GAM Page (Page 1)
+  // 2. Prepare GAM Page (Page 1) - Uses GAMPage structure
   char gam_buffer[PAGE_SIZE] = {0};
-  auto gam_page = new(gam_buffer) BitmapPage();
-  gam_page->page_type = PageType::GAM;
+  auto gam_page = new(gam_buffer) GAMPage();
 
   // Mark Extent 0 as allocated (it holds Header, GAM, IAM)
   Bitmap gam_bitmap(gam_page->bitmap, MAX_BITS);
   gam_bitmap.set(0);
 
-  // 3. Prepare IAM Page (Page 2) - This will be our System Catalog
+  // 3. Prepare IAM Pages (Pages 2-3) - Use SparseIamPage structure for all IAM pages
   char iam_buffer[PAGE_SIZE] = {0};
-  auto iam_page = new(iam_buffer) BitmapPage();
-  iam_page->page_type = PageType::IAM;
+  auto iam_page = new(iam_buffer) SparseIamPage();
+  iam_page->extent_range_start = 0; // System catalog IAM covers range 0
 
   // 4. Write all to disk
   disk_manager_.write_page(HEADER_PAGE_ID, header_buffer);
@@ -261,10 +259,10 @@ ExtentManager::ExtentManager(DiskManager &disk_manager) : disk_manager_(disk_man
       // Read failed (likely empty file), so initialize new DB
       initialize_new_db();
   } else {
-      // Read succeeded, verify signature to ensure it's a valid MiniDB file
+      // Read succeeded, verify signature to ensure it's a valid Letty database file
       auto* header = reinterpret_cast<DatabaseHeader*>(buffer);
       if (std::string(header->signature) != DB_SIGNATURE) {
-          throw std::runtime_error("Corrupt or invalid database file: Signature mismatch. Expected 'MINIDB'.");
+          throw std::runtime_error("Corrupt or invalid database file: Signature mismatch. Expected 'LETTY'.");
       }
   }
 }

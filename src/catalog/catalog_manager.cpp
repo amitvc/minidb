@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 
-namespace minidb {
+namespace letty {
 
 CatalogManager::CatalogManager(DiskManager& disk_manager, IamManager& iam_manager)
     : disk_manager_(disk_manager), iam_manager_(iam_manager) {}
@@ -123,15 +123,15 @@ std::unique_ptr<TableMetadata> CatalogManager::get_table(const std::string& name
     
     char iam_buffer[PAGE_SIZE];
     disk_manager_.read_page(sys_tables_iam_page_id, iam_buffer);
-    auto* iam_page = reinterpret_cast<BitmapPage*>(iam_buffer);
-    Bitmap bitmap(iam_page->bitmap, MAX_BITS);
+    auto* iam_page = reinterpret_cast<SparseIamPage*>(iam_buffer);
+    Bitmap bitmap(iam_page->bitmap, SPARSE_MAX_BITS);
     
     // Check for empty table (sanity check, although loop handles it)
     // Removed incorrect check for bit 0.
     
     // Calculate page ID for the first extent's first page.
     // Extent 0 is pages 0-7. But sys_tables likely allocated a later extent.
-    // Minidb design (from IamManager code):
+    // Lettydb design (from IamManager code):
     // "Global Extent Index = start_page / 8"
     // IamManager::allocate_extent allocates *any* free extent from GAM.
     // Then it marks the corresponding bit in IAM.
@@ -186,10 +186,10 @@ std::unique_ptr<TableMetadata> CatalogManager::get_table(const std::string& name
                             // Scan IAM for sys_columns
                             char col_iam_buf[PAGE_SIZE];
                             disk_manager_.read_page(sys_cols_iam, col_iam_buf);
-                            auto* col_iam = reinterpret_cast<BitmapPage*>(col_iam_buf);
-                            Bitmap col_bitmap(col_iam->bitmap, MAX_BITS);
+                            auto* col_iam = reinterpret_cast<SparseIamPage*>(col_iam_buf);
+                            Bitmap col_bitmap(col_iam->bitmap, SPARSE_MAX_BITS);
                             
-                            for(uint32_t i_col = 0; i_col < MAX_BITS; ++i_col) {
+                            for(uint32_t i_col = 0; i_col < SPARSE_MAX_BITS; ++i_col) {
                                 if (col_bitmap.is_set(i_col)) {
                                     page_id_t col_extent_start = i_col * EXTENT_SIZE;
                                     for(int p_col = 0; p_col < EXTENT_SIZE; ++p_col) {

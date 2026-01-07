@@ -1,5 +1,5 @@
 //
-// Created by MiniDB Project
+// Created by Letty Project
 //
 
 #pragma once
@@ -11,11 +11,11 @@
 #include <memory>
 #include <string>
 
-namespace minidb {
+namespace letty {
 
 /**
  * @class Logger
- * @brief Centralized logging utility for MiniDB
+ * @brief Centralized logging utility for Letty
  * 
  * Provides both console and file logging with configurable levels.
  * Uses spdlog for high-performance, thread-safe logging.
@@ -34,11 +34,12 @@ public:
      * @param log_file Path to log file
      * @param level Log level
      */
-    static void init_for_tests(const std::string& log_file = "minidb_test.log",
-                              spdlog::level::level_enum level = spdlog::level::debug) {
+    static void init_for_tests(const std::string& log_file = "letty_test.log",
+                              spdlog::level::level_enum level = spdlog::level::debug,
+                              spdlog::level::level_enum console_level = spdlog::level::debug) {
         // Create console sink with colors (less verbose for tests)
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        console_sink->set_level(spdlog::level::warn); // Only warnings+ to console during tests
+        console_sink->set_level(console_level); // Configurable console level for tests
         
         // Create basic file sink that appends (not rotating, to capture all test logs)
         auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file, true); // true = append
@@ -46,7 +47,7 @@ public:
         
         // Create logger with both sinks
         std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
-        auto logger = std::make_shared<spdlog::logger>("minidb", sinks.begin(), sinks.end());
+        auto logger = std::make_shared<spdlog::logger>("letty", sinks.begin(), sinks.end());
         
         // Set format with PID for test identification: [timestamp] [PID] [thread_id] [level] message
         logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P] [%t] [%^%l%$] %v");
@@ -57,15 +58,15 @@ public:
         spdlog::set_default_logger(logger);
         
         // Log startup message
-        SPDLOG_INFO("MiniDB Test Logger initialized - Log file: {} (append mode)", log_file);
+        SPDLOG_INFO("Letty Test Logger initialized - Log file: {} (append mode)", log_file);
     }
 
     /**
      * @brief Initialize the logging system
-     * @param log_file Path to log file (default: "minidb.log")
+     * @param log_file Path to log file (default: "letty.log")
      * @param level Log level (default: debug in Debug build, info in Release)
      */
-    static void init(const std::string& log_file = "minidb.log", 
+    static void init(const std::string& log_file = "letty.log", 
                      spdlog::level::level_enum level = 
 #ifdef DEBUG
                          spdlog::level::debug
@@ -84,7 +85,7 @@ public:
         
         // Create logger with both sinks
         std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
-        auto logger = std::make_shared<spdlog::logger>("minidb", sinks.begin(), sinks.end());
+        auto logger = std::make_shared<spdlog::logger>("letty", sinks.begin(), sinks.end());
         
         // Set format: [timestamp] [thread_id] [level] message
         logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%t] [%^%l%$] %v");
@@ -95,7 +96,7 @@ public:
         spdlog::set_default_logger(logger);
         
         // Log startup message
-        SPDLOG_INFO("MiniDB Logger initialized - Log file: {}", log_file);
+        SPDLOG_INFO("Letty Logger initialized - Log file: {}", log_file);
     }
     
     /**
@@ -113,7 +114,7 @@ public:
     }
 };
 
-} // namespace minidb
+} // namespace letty
 
 // Convenient logging macros
 #define LOG_TRACE(...)    SPDLOG_TRACE(__VA_ARGS__)

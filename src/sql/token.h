@@ -5,7 +5,7 @@
 #include <string>
 #include "iostream"
 
-namespace minidb {
+namespace letty {
     // Types of tokens we support
     enum class TokenType {
         // Basic types

@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <vector>
 
-namespace minidb {
+namespace letty {
 
 class CreateTableTest : public ::testing::Test {
  protected:
@@ -65,4 +65,4 @@ TEST_F(CreateTableTest, CreateAndGetTable) {
   EXPECT_FALSE(success2);
 }
 
-} // namespace minidb
+} // namespace letty

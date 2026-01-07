@@ -11,7 +11,7 @@
 #include "storage/disk_manager.h"
 #include "storage/iam_manager.h"
 
-namespace minidb {
+namespace letty {
 
 /**
  * @struct TableMetadata

@@ -9,7 +9,7 @@
 #include <string>
 #include "error_codes.h"
 
-namespace minidb {
+namespace letty {
 
 /**
  * @class DiskManager

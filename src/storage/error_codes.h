@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace  minidb {
+namespace  letty {
 enum class IOResult {
   SUCCESS,
   FILE_NOT_OPEN,

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "storage/storage_def.h"
 
-namespace minidb {
+namespace letty {
 
 /**
  * @brief OIDs for system tables
@@ -45,5 +45,4 @@ struct SysColumnsRecord {
   uint16_t length;
   uint16_t offset;
 };
-
-} // namespace minidb
+}

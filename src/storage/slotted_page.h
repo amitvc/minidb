@@ -5,7 +5,7 @@
 #include <vector>
 #include <string_view>
 
-namespace minidb {
+namespace letty {
 
 /**
  * @struct SlottedPageHeader
@@ -13,9 +13,8 @@ namespace minidb {
  */
 #pragma pack(1)
 struct SlottedPageHeader {
-  PageType page_type;
   //Log Sequence Number
-  lsn_t lsn = 0;
+  lsn_t lsn = 0; // Future use.
   page_id_t next_page_id = INVALID_PAGE_ID;
   page_id_t prev_page_id = INVALID_PAGE_ID;
   uint16_t num_slots = 0;       // Number of slots currently allocated. Will also include deleted slots.

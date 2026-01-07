@@ -2,7 +2,7 @@
 #include "storage/slotted_page.h"
 #include "storage/storage_def.h"
 
-namespace minidb {
+namespace letty {
 
 class SlottedPageTest : public ::testing::Test {
  protected:
@@ -22,7 +22,6 @@ TEST_F(SlottedPageTest, Initialization) {
   EXPECT_LT(page.get_free_space(), 4096);
   
   auto* header = reinterpret_cast<SlottedPageHeader*>(buffer);
-  EXPECT_EQ(header->page_type, PageType::Data);
   EXPECT_EQ(header->tuple_count, 0);
 }
 

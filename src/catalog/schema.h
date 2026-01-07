@@ -4,7 +4,7 @@
 #include <optional>
 #include "catalog/column.h"
 
-namespace minidb {
+namespace letty {
 
 /**
  * @class Schema

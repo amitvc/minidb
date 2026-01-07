@@ -6,13 +6,13 @@
 #include <string>
 #include <string_view>
 
-namespace minidb {
+namespace letty {
     /**
-     * @class MiniDBCli
-     * @brief Interactive command-line interface for the MiniDB database
+     * @class LettyCli
+     * @brief Interactive command-line interface for the Letty database
      * 
-     * The MiniDBCli class provides a simple command-line interface that allows
-     * users to interact with the MiniDB database. It handles user input, processes
+     * The LettyCli class provides a simple command-line interface that allows
+     * users to interact with the Letty database. It handles user input, processes
      * SQL commands, and displays results in a user-friendly format.
      * 
      * @par Features:
@@ -23,11 +23,11 @@ namespace minidb {
      * 
      * @par Usage Example:
      * @code
-     * MiniDBCli cli;
+     * LettyCli cli;
      * cli.Run();  // Starts the interactive session
      * @endcode
      */
-    class MiniDBCli {
+    class LettyCli {
     public:
         /**
          * @brief Starts the interactive CLI session

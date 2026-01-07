@@ -7,12 +7,12 @@
 #include "disk_manager.h"
 #include <mutex>
 
-namespace minidb {
+namespace letty {
 /**
  * @class ExtentManager
  * @brief Manages allocation and deallocation of Extent's within the database file.
  * An *extent* is a contiguous group of pages treated as a single allocation unit. All pages within an Extent typically
- * belong to a single database entity (table, index or system catalog). For minidb the size of extent is 8 pages
+ * belong to a single database entity (either table, index or system catalog). For letty the size of extent is 8 pages
  * (see EXTENT_SIZE in config.h)
  * The ExtentManager sits above the DiskManager and below higher-level components.
  *

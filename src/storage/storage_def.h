@@ -10,20 +10,8 @@
 #include <cstring>
 
 
-namespace minidb {
-/**
- * @enum PageType
- * @brief Types of pages we support.
- */
-enum class PageType {
-  Header,
-  IAM,
-  GAM,
-  Catalog,
-  Data,
-  Index,
-  // Catalog - Removed, sys tables are just Data pages
-};
+namespace letty {
+
 
 #pragma pack(1) // turn off byte padding
 
@@ -41,8 +29,8 @@ enum class PageType {
  * Byte Offsets (PAGE_SIZE = 4096)
  *
  *  +--------------------------------------------------------------+ 0
- *  | signature[8]   ("MINIDB\0\0")                                |
- *  |   - Identifies this file as a MiniDB database                |
+ *  | signature[8]   ("LETTY\0\0\0")                                |
+ *  |   - Identifies this file as a Letty database                |
  *  +--------------------------------------------------------------+ 8
  *  | version (uint32)                                             |
  *  |   - Database file format version                             |
@@ -99,48 +87,104 @@ struct DatabaseHeader {
 };
 
 /**
- * @struct BitmapPage
- * @brief A generic structure to represent Allocation Map pages (GAM or IAM).
+ * @struct GAMPage
+ * @brief Structure specifically for GAM (Global Allocation Map) pages.
  *
- * This struct overlays a raw 4KB page. It consists of:
- * 1. A small header (page type and pointer to the next bitmap page).
- * 2. A large byte array (`bitmap`) effectively holding 32704 bits.
+ * This struct overlays a raw 4KB page and is used ONLY for GAM pages.
  *
- * - usage as GAM: Each bit represents an Extent (8 pages). 1 GAM page can track 32704 extents (~1GB of data).
- * - usage as IAM: Each bit represents an Extent belonging to a specific table/index.
- * Note: Each extent represents a group of 8 consecutive 4kb pages.
+ * GAM Usage: Each bit represents an Extent (8 pages). 1 GAM page can track 
+ * 32736 extents (~1GB of data). When the database grows beyond this, additional
+ * GAM pages are chained together.
  *
- *  +--------------------------------------------------------------+ 0
- *  | page_type (PageType)                                         |
- *  |   - Identifies the meaning of bits (GAM vs IAM)              |
+ * Layout:
  *  +--------------------------------------------------------------+ 4
  *  | next_bitmap_page_id (page_id_t)                              |
- *  |   - Chains bitmap pages if we need to track more extents     |
+ *  |   - Links to next GAM page when database exceeds capacity    |
  *  +--------------------------------------------------------------+ 8
  *  | bitmap[BITMAP_ARRAY_SIZE]                                    |
- *  |   - Raw bitset payload                                       |
- *  |   - BITMAP_ARRAY_SIZE = PAGE_SIZE - 4 - 4 = 4088 bytes       |
- *  |   - bits_per_bitmap_page = 4088 * 8 = 32704 extents          |
- *  |   - pages_covered = 32704 extents * 8 pages/extent           |
- *  |                  = 261,632 pages                             |
+ *  |   - Raw bitset payload tracking extent allocation            |
+ *  |   - BITMAP_ARRAY_SIZE = PAGE_SIZE - 4 = 4092 bytes           |
+ *  |   - bits_per_bitmap_page = 4092 * 8 = 32736 extents          |
+ *  |   - pages_covered = 32736 extents * 8 pages/extent           |
+ *  |                  = 261,888 pages (~1GB)                      |
  *  +--------------------------------------------------------------+
  *
  */
-struct BitmapPage {
-  // Identify the type of page. E.g IAM/GAM
-  PageType page_type;
-
-  // When the db grows large we might need to create a chain of GAM or IAM pages.
+struct GAMPage {
+  // Links GAM pages together when database grows beyond single page capacity
   page_id_t next_bitmap_page_id = INVALID_PAGE_ID;
 
-  // PageSize  - 4 (type) - 4 (next_id)
-  char bitmap[BITMAP_ARRAY_SIZE]; // 4088 bytes
+  // Bitmap tracking extent allocation (1 = allocated, 0 = free)
+  char bitmap[BITMAP_ARRAY_SIZE]; // 4092 bytes
+};
+
+/**
+ * @struct SparseIamPage  
+ * @brief Represents extent allocations for individual tables. This is Index allocation map implementation.
+ * This implementation is an optimized version of IAM page implementation. It will only chain IAM pages which
+ * are applicable for the table in consideration.
+ *
+ * Example: If a table has extents #100 and #200000, we create exactly 2 IAM pages:
+ * - IAM-1: extent_range_start=0, covers extents 0-32639 (contains extent #100)  
+ * - IAM-2: extent_range_start=196608, covers extents 196608-229247 (contains #200000)
+ * 
+ * Layout:
+ *  +--------------------------------------------------------------+ 0
+ *  | page_type (PageType::IAM)                                    |
+ *  +--------------------------------------------------------------+ 4
+ *  | next_bitmap_page_id (page_id_t)                              |
+ *  +--------------------------------------------------------------+ 8
+ *  | extent_range_start (uint64_t)                                |
+ *  |   - First global extent index this page covers              |
+ *  +--------------------------------------------------------------+ 16
+ *  | bitmap[SPARSE_BITMAP_ARRAY_SIZE]                             |
+ *  |   - Bitmap covering extents [range_start, range_start+32639]|
+ *  +--------------------------------------------------------------+
+ *
+ * Benefits:
+ * - Saves disk space for sparse tables
+ * - Reduces IAM chain traversal time  
+ * - Unified structure for all IAM operations
+ * - No legacy compatibility overhead
+ */
+struct SparseIamPage {
+  // Link to next IAM page in chain (may skip ranges)
+  page_id_t next_bitmap_page_id = INVALID_PAGE_ID;
+  
+  /**
+   * @brief Starting global extent index for this page's range.
+   * 
+   * This page's bitmap covers global extents from:
+   * [extent_range_start] to [extent_range_start + SPARSE_MAX_BITS - 1]
+   * 
+   * Example: If extent_range_start = 65408, this page covers
+   * global extents 65408 through 98111 (32704 extents total).
+   */
+  uint64_t extent_range_start = 0;
+  
+  // Bitmap array (slightly smaller due to range_start field)
+  char bitmap[SPARSE_BITMAP_ARRAY_SIZE]; // 4080 bytes = 32640 bits
+  
+  /**
+   * @brief Check if this page covers the given global extent index.
+   */
+  bool covers_extent(uint64_t global_extent_index) const {
+    return global_extent_index >= extent_range_start && 
+           global_extent_index < extent_range_start + SPARSE_MAX_BITS;
+  }
+  
+  /**
+   * @brief Convert global extent index to local bit offset in this page.
+   */
+  size_t get_bit_offset(uint64_t global_extent_index) const {
+    return static_cast<size_t>(global_extent_index - extent_range_start);
+  }
 };
 #pragma pack()
 
 /**
  * @class Bitmap
- * @brief A helper class to manipulate raw bits stored in the bitmap array inside the BitmapPage class.
+ * @brief A helper class to manipulate raw bits stored in the bitmap array inside the GAMPage class.
  *
  * This class provides an abstraction over raw byte arrays to allow for easy setting, clearing,
  * and checking of individual bits. This is primarily used for managing Allocation Maps (GAM/IAM),
@@ -150,7 +194,7 @@ class Bitmap {
  public:
   /**
    * @brief Constructs a Bitmap wrapper around raw bitmap data.
-   * @param data A pointer to the start of the bitmap data (e.g., BitmapPage::bitmap).
+   * @param data A pointer to the start of the bitmap data (e.g., GAMPage::bitmap).
    * @param size_in_bits The total number of bits the bitmap can hold.
    */
   explicit Bitmap(char *data, size_t size_in_bits)

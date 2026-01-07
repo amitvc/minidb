@@ -7,7 +7,7 @@
 #include "test_utils.h"
 #include <vector>
 
-using namespace minidb;
+using namespace letty;
 
 class LexerTest : public ::testing::Test {};
 

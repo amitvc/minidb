@@ -4,7 +4,7 @@
 #include <utility>
 #include "catalog/catalog_defs.h"
 
-namespace minidb {
+namespace letty {
 
 /**
  * @class Column

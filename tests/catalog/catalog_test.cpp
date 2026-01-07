@@ -5,7 +5,7 @@
 #include "storage/iam_manager.h"
 #include <cstdio>
 
-namespace minidb {
+namespace letty {
 
 class CatalogBootstrapTest : public ::testing::Test {
  protected:

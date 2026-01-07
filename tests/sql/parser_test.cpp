@@ -10,7 +10,7 @@
 #include <vector>
 #include "sql/ast.h"
 
-using namespace minidb;
+using namespace letty;
 
 
 class ParserTest : public ::testing::Test {

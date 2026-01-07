@@ -13,8 +13,8 @@
  */
 
 
-namespace minidb {
-  static constexpr char DB_SIGNATURE[] = "MINIDB";
+namespace letty {
+  static constexpr char DB_SIGNATURE[] = "LETTYDB";
 
   // Use a type alias for page IDs for clarity and future flexibility.
   using page_id_t = int32_t;
@@ -32,9 +32,13 @@ namespace minidb {
   static constexpr int HEADER_PAGE_ID = 0;
   static constexpr page_id_t FIRST_GAM_PAGE_ID = 1; // Since first page is database header page always.
   static constexpr page_id_t SYS_TABLES_IAM_PAGE_ID = 2;
-static constexpr page_id_t SYS_COLUMNS_IAM_PAGE_ID = 3;
-  static constexpr size_t BITMAP_ARRAY_SIZE = PAGE_SIZE - 8; // 8 bytes = TYPE + PAGE_ID
+  static constexpr page_id_t SYS_COLUMNS_IAM_PAGE_ID = 3;
+  static constexpr size_t BITMAP_ARRAY_SIZE = PAGE_SIZE - 4; // 4 bytes = PAGE_ID
   static constexpr size_t MAX_BITS = BITMAP_ARRAY_SIZE * 8;
+  
+  // For SparseIamPage: PAGE_SIZE - 12 (next_id + range_start)
+  static constexpr size_t SPARSE_BITMAP_ARRAY_SIZE = PAGE_SIZE - 12; // 4080 bytes
+  static constexpr size_t SPARSE_MAX_BITS = SPARSE_BITMAP_ARRAY_SIZE * 8; // 32640 bits
 }
 
 

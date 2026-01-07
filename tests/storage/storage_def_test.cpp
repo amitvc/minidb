@@ -9,7 +9,7 @@
 #include <vector>
 #include "storage/config.h"
 
-namespace minidb {
+namespace letty {
 class BitmapTest : public ::testing::Test {
  protected:
   void SetUp() override {

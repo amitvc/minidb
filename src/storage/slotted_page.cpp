@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cassert>
 
-namespace minidb {
+namespace letty {
 
 SlottedPage::SlottedPage(char* buffer, bool init) : data_(buffer) {
   // First is page header and then slots array.
@@ -11,7 +11,6 @@ SlottedPage::SlottedPage(char* buffer, bool init) : data_(buffer) {
   
   if (init) {
     std::memset(buffer, 0, PAGE_SIZE);
-    header_->page_type = PageType::Data;
     header_->free_space_pointer = PAGE_SIZE;
     header_->num_slots = 0;
     header_->next_page_id = INVALID_PAGE_ID;
@@ -109,4 +108,4 @@ bool SlottedPage::delete_tuple(uint16_t slot_id) {
   return true;
 }
 
-} // namespace minidb
+} // namespace letty

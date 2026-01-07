@@ -2,15 +2,15 @@
 // Created by Amit Chavan on 6/6/25.
 //
 
-#include "MiniDBCli.h"
+#include "LettyCli.h"
 #include <iostream>
 #include <algorithm>
 #include <cctype>
-namespace minidb {
+namespace letty {
 
-    void MiniDBCli::Run() {
+    void LettyCli::Run() {
         std::string input;
-        std::cout << "Welcome to MiniDB! Type 'exit' to quit.\n";
+        std::cout << "Welcome to Letty! Type 'exit' to quit.\n";
 
         while (true) {
             std::cout << Prompt();
@@ -26,11 +26,11 @@ namespace minidb {
         }
     }
 
-    std::string MiniDBCli::Prompt() {
-        return "minidb> ";
+    std::string LettyCli::Prompt() {
+        return "letty> ";
     }
 
-    void MiniDBCli::ProcessCommand(const std::string_view input) {
+    void LettyCli::ProcessCommand(const std::string_view input) {
         if (input.find("createtable") == 0) {
             std::cout << "[TODO] Handle CREATE TABLE\n";
         } else if (input.find("insert") == 0) {

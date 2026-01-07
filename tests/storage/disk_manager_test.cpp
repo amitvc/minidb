@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <cstring>
 #include <memory>
-using namespace minidb;
+using namespace letty;
 class DiskManagerTest : public ::testing::Test {
 protected:
     void SetUp() override {
