@@ -9,7 +9,7 @@
 #include <vector>
 #include <memory>
 
-namespace minidb {
+namespace letty {
 
     struct SQLDate {
         int year, month, day;
@@ -245,4 +245,4 @@ namespace minidb {
 
 
 
-} // namespace minidb
+} // namespace letty

@@ -22,7 +22,7 @@ Designed as a comprehensive educational initiative, this project aims to demysti
 - A C++17 compliant compiler (e.g., GCC, Clang, MSVC)
 
 - CMake (version 3.14 or higher)
-  
+
 - Google Test (will be downloaded automatically by CMake)
 
 - Doxygen (optional, for generating documentation)

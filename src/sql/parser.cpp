@@ -13,7 +13,7 @@
 #include <sstream>
 
 
-namespace minidb {
+namespace letty {
 
     SQLDate parse_date_literal(const std::string& s) {
         SQLDate date;

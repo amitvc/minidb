@@ -8,7 +8,7 @@
 #include "token.h"
 #include "ast.h"
 
-namespace minidb {
+namespace letty {
 
     /**
      * @class Parser

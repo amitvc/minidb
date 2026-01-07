@@ -9,7 +9,7 @@
 #include <string>
 #include "token.h"
 
-namespace minidb {
+namespace letty {
 
     /**
      * @class Lexer

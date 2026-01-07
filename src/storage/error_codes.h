@@ -4,6 +4,7 @@
 
 #pragma once
 
+namespace  letty {
 enum class IOResult {
   SUCCESS,
   FILE_NOT_OPEN,
@@ -13,3 +14,4 @@ enum class IOResult {
   READ_ERROR,
   INVALID_PAGE
 };
+}

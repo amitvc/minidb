@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.22)
-project(minidb)
+project(lettydb)
 
 set(CMAKE_CXX_STANDARD 17)
 
 # Set debug flags when in Debug mode
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
+
+# Add spdlog
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.12.0
+)
+FetchContent_MakeAvailable(spdlog)
 
 file(GLOB_RECURSE DB_SOURCES "src/*.cpp")
 file(GLOB_RECURSE DB_HEADERS "src/*.h")
@@ -12,21 +21,22 @@ file(GLOB_RECURSE DB_HEADERS "src/*.h")
 # Remove main.cpp from library sources
 list(REMOVE_ITEM DB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
-add_library(minidb ${DB_SOURCES} ${DB_HEADERS})
+add_library(lettydb ${DB_SOURCES} ${DB_HEADERS})
+target_link_libraries(lettydb spdlog::spdlog)
 
 # Create executable
-add_executable(minidb_cli src/main.cpp)
-target_link_libraries(minidb_cli minidb)
+add_executable(lettydb_cli src/main.cpp)
+target_link_libraries(lettydb_cli lettydb)
 
 
-target_include_directories(minidb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(lettydb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 
 # Documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     # Set Doxygen configuration options
-    set(DOXYGEN_PROJECT_NAME "MiniDB")
+    set(DOXYGEN_PROJECT_NAME "LettyDB")
     set(DOXYGEN_PROJECT_BRIEF "A SQL-compliant database written in C++")
     set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/docs")
     set(DOXYGEN_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/src")
